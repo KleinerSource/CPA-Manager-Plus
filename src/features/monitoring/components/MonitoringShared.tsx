@@ -234,6 +234,8 @@ export function PaginationControls({
           <Select
             className={styles.pageSizeSelect}
             triggerClassName={styles.pageSizeSelectTrigger}
+            dropdownClassName={styles.pageSizeSelectDropdown}
+            dropdownMinWidth={132}
             value={String(pageSize)}
             options={pageSizeOptions.map((size) => ({
               value: String(size),

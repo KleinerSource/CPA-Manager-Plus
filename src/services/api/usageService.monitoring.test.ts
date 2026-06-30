@@ -163,8 +163,8 @@ describe('native usage monitoring analytics fallback', () => {
         include: {
           events_page: {
             limit: 1,
-            before_ms: firstPage.events?.next_before_ms,
-            before_id: firstPage.events?.next_before_id,
+            offset: 1,
+            page: 2,
           },
         },
       })

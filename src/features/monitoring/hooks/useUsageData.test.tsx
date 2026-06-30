@@ -8,15 +8,11 @@ import { useUsageData, type UseUsageDataReturn } from './useUsageData';
 vi.mock('@/hooks/usePanelFeatureAvailability', () => ({
   usePanelFeatureAvailability: () => ({
     checking: false,
-    panelHostMode: 'external_panel',
     panelBase: 'http://127.0.0.1:5173',
-    managerServiceBase: 'http://127.0.0.1:8317',
-    managerServiceAvailable: false,
+    serviceBase: 'http://127.0.0.1:8317',
+    serviceAvailable: true,
     requestMonitoringAvailable: true,
     modelPricesAvailable: true,
-    serverCodexInspectionAvailable: false,
-    dockerSetupAvailable: false,
-    externalManagerConfigAvailable: false,
     reason: '',
   }),
 }));

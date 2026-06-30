@@ -16,8 +16,6 @@ const USAGE_SERVICE_ERROR_CODES = new Set([
   'cpa_connection_required_for_monitoring',
   'management_api_validation_failed',
   'management_api_config_failed',
-  'cpa_usage_retention_invalid',
-  'poll_interval_exceeds_retention',
   'invalid_time_zone',
   'enable_cpa_usage_statistics_failed',
   'setup_env_managed',
@@ -39,17 +37,8 @@ export interface UsageServiceApiError extends Error {
   data?: unknown;
 }
 
-export interface UsageServiceInfo {
-  service?: string;
-  mode?: string;
-  startedAt?: number;
-  configured?: boolean;
-  adminReady?: boolean;
-  projectInitialized?: boolean;
-  setupRequired?: boolean;
-  migrationStatus?: string;
-  dataKeyReady?: boolean;
-  hasHistoricalData?: boolean;
+export interface UsageRequestOptions {
+  includeDetails?: boolean;
 }
 
 export interface UsageServiceCollectorStatus {
@@ -74,109 +63,6 @@ export interface UsageServiceStatus {
   collector?: UsageServiceCollectorStatus;
 }
 
-export interface UsageServiceSetupRequest {
-  cpaBaseUrl: string;
-  cpaManagementKey: string;
-  managementKey?: string;
-  collectorMode?: string;
-  queue?: string;
-  popSide?: string;
-  batchSize?: number;
-  pollIntervalMs?: number;
-  queryLimit?: number;
-  tlsSkipVerify?: boolean;
-  ensureUsageStatisticsEnabled?: boolean;
-  requestMonitoringEnabled?: boolean;
-}
-
-export interface ManagerCPAConnectionConfig {
-  cpaBaseUrl: string;
-  managementKey?: string;
-}
-
-export interface ManagerCollectorConfig {
-  enabled?: boolean;
-  collectorMode: string;
-  queue: string;
-  popSide: string;
-  batchSize: number;
-  pollIntervalMs: number;
-  queryLimit: number;
-  tlsSkipVerify?: boolean;
-}
-
-export interface ManagerExternalUsageServiceConfig {
-  enabled: boolean;
-  serviceBase: string;
-}
-
-export type ManagerCodexInspectionScheduleMode = 'interval' | 'time_points';
-export type ManagerCodexInspectionAutoActionMode = 'none' | 'enable' | 'disable' | 'delete';
-
-export interface ManagerCodexInspectionScheduleConfig {
-  mode?: ManagerCodexInspectionScheduleMode | string;
-  timePoints?: string[];
-  intervalMinutes?: number;
-  timeZone?: string;
-}
-
-export interface ManagerCodexInspectionConfig {
-  enabled?: boolean;
-  schedule?: ManagerCodexInspectionScheduleConfig;
-  targetType?: string;
-  workers?: number;
-  deleteWorkers?: number;
-  timeout?: number;
-  retries?: number;
-  userAgent?: string;
-  usedPercentThreshold?: number;
-  sampleSize?: number;
-  autoActionMode?: ManagerCodexInspectionAutoActionMode | string;
-}
-
-export interface ManagerConfig {
-  cpaConnection: ManagerCPAConnectionConfig;
-  collector: ManagerCollectorConfig;
-  codexInspection?: ManagerCodexInspectionConfig;
-  externalUsageService: ManagerExternalUsageServiceConfig;
-  updatedAtMs?: number;
-}
-
-export interface CPAUsageConfig {
-  usageStatisticsEnabled: boolean;
-  redisUsageQueueRetentionSeconds: number;
-  retentionSourceDefault?: boolean;
-}
-
-export interface ManagerConfigResponse {
-  config: ManagerConfig;
-  source?: 'env' | 'db' | '';
-  cpaUsage?: CPAUsageConfig;
-}
-
-export interface CodexInspectionRun {
-  id: number;
-  triggerType: string;
-  triggerKey?: string;
-  status: string;
-  startedAtMs: number;
-  finishedAtMs?: number;
-  totalFiles: number;
-  probeSetCount: number;
-  sampledCount: number;
-  disabledCount: number;
-  enabledCount: number;
-  deleteCount: number;
-  disableCount: number;
-  enableCount: number;
-  reauthCount: number;
-  keepCount: number;
-  error?: string;
-  settings?: ManagerCodexInspectionConfig;
-  createdAtMs: number;
-  updatedAtMs: number;
-}
-
 export interface CodexInspectionResult {
   id: number;
   runId: number;
@@ -199,41 +85,6 @@ export interface CodexInspectionResult {
   isQuota: boolean;
   error?: string;
   createdAtMs: number;
-}
-
-export interface CodexInspectionLog {
-  id: number;
-  runId: number;
-  level: string;
-  message: string;
-  detail?: unknown;
-  createdAtMs: number;
-}
-
-export interface CodexInspectionRunsResponse {
-  items: CodexInspectionRun[];
-}
-
-export interface CodexInspectionRunDetail {
-  run: CodexInspectionRun;
-  results: CodexInspectionResult[];
-  logs: CodexInspectionLog[];
-}
-
-export interface CodexInspectionActionOutcome {
-  resultId?: number;
-  accountKey?: string;
-  fileName: string;
-  displayAccount: string;
-  action: string;
-  status: string;
-  success: boolean;
-  error?: string;
-}
-
-export interface CodexInspectionActionsResponse {
-  outcomes: CodexInspectionActionOutcome[];
-  detail: CodexInspectionRunDetail;
 }
 
 export interface ModelPricesResponse {
@@ -532,8 +383,8 @@ export interface MonitoringAnalyticsFilters {
 
 export interface MonitoringAnalyticsEventsPageRequest {
   limit?: number;
-  before_ms?: number | null;
-  before_id?: number | null;
+  offset?: number;
+  page?: number;
 }
 
 export interface MonitoringAnalyticsInclude {
@@ -800,8 +651,6 @@ export interface MonitoringAnalyticsEventRow {
 
 export interface MonitoringAnalyticsEventsResponse {
   items: MonitoringAnalyticsEventRow[];
-  next_before_ms: number;
-  next_before_id?: number;
   has_more: boolean;
   total_count?: number;
 }
@@ -826,26 +675,9 @@ export interface MonitoringAnalyticsResponse {
 
 const USAGE_SERVICE_TIMEOUT_MS = 15 * 1000;
 const USAGE_SERVICE_TRANSFER_TIMEOUT_MS = 60 * 1000;
-const CODEX_INSPECTION_RUN_TIMEOUT_MS = 10 * 60 * 1000;
-export const USAGE_SERVICE_ID = 'cpa-manager-plus';
-export const LEGACY_USAGE_SERVICE_ID = 'cpa-manager';
-export const LEGACY_USAGE_SERVICE_IDS = [LEGACY_USAGE_SERVICE_ID, 'cpa-usage-service'] as const;
-export const USAGE_SERVICE_LAST_CPA_BASE_KEY = 'cpa-manager-plus:last-cpa-base';
-export const LEGACY_USAGE_SERVICE_LAST_CPA_BASE_KEY = 'cpa-manager:last-cpa-base';
-export const LEGACY_USAGE_SERVICE_LAST_CPA_BASE_KEYS = [
-  LEGACY_USAGE_SERVICE_LAST_CPA_BASE_KEY,
-  'cpa-usage-service:last-cpa-base',
-] as const;
-
-export const isUsageServiceId = (service?: string): boolean =>
-  service === USAGE_SERVICE_ID ||
-  (typeof service === 'string' &&
-    (LEGACY_USAGE_SERVICE_IDS as readonly string[]).includes(service));
-
-export const normalizeUsageServiceBase = (input: string): string => normalizeApiBase(input);
 
 const buildUrl = (base: string, path: string): string => {
-  const normalized = normalizeUsageServiceBase(base).replace(/\/+$/, '');
+  const normalized = normalizeApiBase(base).replace(/\/+$/, '');
   return `${normalized}${path}`;
 };
 
@@ -898,7 +730,7 @@ const toUsageServiceApiError = (error: unknown): UsageServiceApiError => {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data;
     const message =
-      readUsageServiceErrorMessage(data) || error.message || 'Manager Server request failed';
+      readUsageServiceErrorMessage(data) || error.message || 'Management API request failed';
     const apiError = new Error(message) as UsageServiceApiError;
     apiError.name = 'UsageServiceApiError';
     apiError.status = error.response?.status;
@@ -910,7 +742,7 @@ const toUsageServiceApiError = (error: unknown): UsageServiceApiError => {
 
   if (error instanceof Error) return error as UsageServiceApiError;
   const fallback = new Error(
-    typeof error === 'string' ? error : 'Manager Server request failed'
+    typeof error === 'string' ? error : 'Management API request failed'
   ) as UsageServiceApiError;
   fallback.name = 'UsageServiceApiError';
   return fallback;
@@ -953,176 +785,43 @@ const parseContentDispositionFilename = (value: string): string => {
 };
 
 export const usageServiceApi = {
-  getInfo: async (base: string): Promise<UsageServiceInfo> => {
-    return withUsageServiceError(async () => {
-      const response = await axios.get<UsageServiceInfo>(buildUrl(base, '/usage-service/info'), {
-        timeout: USAGE_SERVICE_TIMEOUT_MS,
-      });
-      return response.data;
-    });
-  },
-
-  setup: async (
-    base: string,
-    payload: UsageServiceSetupRequest,
-    adminKey?: string
-  ): Promise<void> => {
-    await withUsageServiceError(async () => {
-      await axios.post(buildUrl(base, '/setup'), payload, {
-        timeout: USAGE_SERVICE_TIMEOUT_MS,
-        headers: authHeaders(adminKey),
-      });
-    });
-  },
-
-  getManagerConfig: async (
-    base: string,
-    managementKey?: string
-  ): Promise<ManagerConfigResponse> => {
-    return withUsageServiceError(async () => {
-      const response = await axios.get<ManagerConfigResponse>(
-        buildUrl(base, '/usage-service/config'),
-        {
-          timeout: USAGE_SERVICE_TIMEOUT_MS,
-          headers: authHeaders(managementKey),
-        }
-      );
-      return response.data;
-    });
-  },
-
-  saveManagerConfig: async (
-    base: string,
-    config: ManagerConfig,
-    managementKey?: string
-  ): Promise<ManagerConfigResponse> => {
-    return withUsageServiceError(async () => {
-      const response = await axios.put<ManagerConfigResponse>(
-        buildUrl(base, '/usage-service/config'),
-        { config },
-        {
-          timeout: USAGE_SERVICE_TIMEOUT_MS,
-          headers: authHeaders(managementKey),
-        }
-      );
-      return response.data;
-    });
-  },
-
-  listCodexInspectionRuns: async (
-    base: string,
-    managementKey?: string,
-    limit = 20
-  ): Promise<CodexInspectionRunsResponse> => {
-    return withUsageServiceError(async () => {
-      const response = await axios.get<CodexInspectionRunsResponse>(
-        buildUrl(base, '/v0/management/codex-inspection/runs'),
-        {
-          timeout: USAGE_SERVICE_TIMEOUT_MS,
-          headers: authHeaders(managementKey),
-          params: { limit },
-        }
-      );
-      return response.data;
-    });
-  },
-
-  getCodexInspectionRun: async (
-    base: string,
-    managementKey: string | undefined,
-    id: number
-  ): Promise<CodexInspectionRunDetail> => {
-    return withUsageServiceError(async () => {
-      const response = await axios.get<CodexInspectionRunDetail>(
-        buildUrl(base, `/v0/management/codex-inspection/runs/${id}`),
-        {
-          timeout: USAGE_SERVICE_TIMEOUT_MS,
-          headers: authHeaders(managementKey),
-        }
-      );
-      return response.data;
-    });
-  },
-
-  runCodexInspection: async (
-    base: string,
-    managementKey?: string
-  ): Promise<CodexInspectionRunDetail> => {
-    return withUsageServiceError(async () => {
-      const response = await axios.post<CodexInspectionRunDetail>(
-        buildUrl(base, '/v0/management/codex-inspection/run'),
-        undefined,
-        {
-          timeout: CODEX_INSPECTION_RUN_TIMEOUT_MS,
-          headers: authHeaders(managementKey),
-        }
-      );
-      return response.data;
-    });
-  },
-
-  executeCodexInspectionActions: async (
-    base: string,
-    managementKey: string | undefined,
-    runId: number,
-    resultIds: number[]
-  ): Promise<CodexInspectionActionsResponse> => {
-    return withUsageServiceError(async () => {
-      const response = await axios.post<CodexInspectionActionsResponse>(
-        buildUrl(base, `/v0/management/codex-inspection/runs/${runId}/actions`),
-        { resultIds },
-        {
-          timeout: CODEX_INSPECTION_RUN_TIMEOUT_MS,
-          headers: authHeaders(managementKey),
-        }
-      );
-      return response.data;
-    });
-  },
-
   getStatus: async (base: string, managementKey?: string): Promise<UsageServiceStatus> => {
     return withUsageServiceError(async () => {
-      try {
-        const response = await axios.get<UsageServiceStatus>(buildUrl(base, '/status'), {
-          timeout: USAGE_SERVICE_TIMEOUT_MS,
-          headers: authHeaders(managementKey),
-        });
-        return response.data;
-      } catch (error) {
-        if (!axios.isAxiosError(error) || error.response?.status !== 404) {
-          throw error;
-        }
-        const usageResponse = await axios.get<UsagePayload>(buildUrl(base, '/v0/management/usage'), {
-          timeout: USAGE_SERVICE_TIMEOUT_MS,
-          headers: authHeaders(managementKey),
-        });
-        const usage = isRecord(usageResponse.data?.usage)
-          ? (usageResponse.data.usage as UsagePayload)
-          : usageResponse.data;
-        const totalRequests = toDashboardNumber(usage.total_requests);
-        const failureCount = toDashboardNumber(usage.failure_count);
-        return {
-          service: 'cliproxyapi-native',
-          events: totalRequests,
-          deadLetters: 0,
-          collector: {
-            collector: 'native',
-            mode: 'built-in',
-            transport: 'management-api',
-            queue: 'in-memory',
-            totalInserted: totalRequests,
-            totalSkipped: failureCount,
-          },
-        };
-      }
+      const usageResponse = await axios.get<UsagePayload>(buildUrl(base, '/v0/management/usage'), {
+        timeout: USAGE_SERVICE_TIMEOUT_MS,
+        headers: authHeaders(managementKey),
+      });
+      const usage = isRecord(usageResponse.data?.usage)
+        ? (usageResponse.data.usage as UsagePayload)
+        : usageResponse.data;
+      const totalRequests = toDashboardNumber(usage.total_requests);
+      const failureCount = toDashboardNumber(usage.failure_count);
+      return {
+        service: 'cliproxyapi-native',
+        events: totalRequests,
+        deadLetters: 0,
+        collector: {
+          collector: 'native',
+          mode: 'built-in',
+          transport: 'management-api',
+          queue: 'in-memory',
+          totalInserted: totalRequests,
+          totalSkipped: failureCount,
+        },
+      };
     });
   },
 
-  getUsage: async (base: string, managementKey?: string): Promise<UsagePayload> => {
+  getUsage: async (
+    base: string,
+    managementKey?: string,
+    options: UsageRequestOptions = {}
+  ): Promise<UsagePayload> => {
     return withUsageServiceError(async () => {
       const response = await axios.get<UsagePayload>(buildUrl(base, '/v0/management/usage'), {
         timeout: USAGE_SERVICE_TIMEOUT_MS,
         headers: authHeaders(managementKey),
+        params: options.includeDetails ? { details: 1 } : undefined,
       });
       return response.data;
     });
@@ -2013,9 +1712,12 @@ const buildFallbackMonitoringEvents = (
   details: UsageDetailWithEndpoint[],
   request: MonitoringAnalyticsRequest
 ): MonitoringAnalyticsEventsResponse => {
-  const beforeMs = request.include?.events_page?.before_ms ?? null;
-  const beforeId = request.include?.events_page?.before_id ?? null;
   const limit = Math.max(Math.min(toDashboardNumber(request.include?.events_page?.limit) || 500, 1000), 1);
+  const page = Math.max(toDashboardNumber(request.include?.events_page?.page) || 1, 1);
+  const offset = Math.max(
+    toDashboardNumber(request.include?.events_page?.offset) || (page - 1) * limit,
+    0
+  );
   const occurrenceCounts = new Map<string, number>();
   const sorted = details
     .map((detail, originalIndex) => ({ detail, originalIndex }))
@@ -2034,16 +1736,8 @@ const buildFallbackMonitoringEvents = (
         eventHash: occurrence > 0 ? `${identity}|#${occurrence}` : identity,
       };
     });
-  const candidates = beforeMs
-    ? sorted.filter(
-        (entry) =>
-          entry.detail.__timestampMs < beforeMs ||
-          (entry.detail.__timestampMs === beforeMs &&
-            beforeId !== null &&
-            entry.cursorId > beforeId)
-      )
-    : sorted;
-  const pageItems = candidates.slice(0, limit);
+  const candidates = sorted;
+  const pageItems = candidates.slice(offset, offset + limit);
   const items = pageItems.map((entry): MonitoringAnalyticsEventRow => {
     const { detail } = entry;
     const tokens = detail.tokens ?? {};
@@ -2111,12 +1805,9 @@ const buildFallbackMonitoringEvents = (
       fail_summary: monitoringText(detail.fail_summary || detail.fail_body),
     };
   });
-  const lastItem = pageItems[pageItems.length - 1];
   return {
     items,
-    next_before_ms: lastItem?.detail.__timestampMs ?? 0,
-    next_before_id: lastItem?.cursorId,
-    has_more: candidates.length > pageItems.length,
+    has_more: offset + pageItems.length < candidates.length,
     total_count: details.length,
   };
 };
@@ -2484,46 +2175,21 @@ export const dashboardApi = {
 };
 
 export const monitoringAnalyticsApi = {
-  getNativeUsageAnalytics: async (
-    base: string,
-    managementKey: string | undefined,
-    request: MonitoringAnalyticsRequest
-  ): Promise<MonitoringAnalyticsResponse> => {
-    return withUsageServiceError(async () => {
-      const usageResponse = await axios.get<UsagePayload>(buildUrl(base, '/v0/management/usage'), {
-        timeout: USAGE_SERVICE_TIMEOUT_MS,
-        headers: authHeaders(managementKey),
-      });
-      return buildFallbackMonitoringAnalytics(usageResponse.data, request);
-    });
-  },
-
   getAnalytics: async (
     base: string,
     managementKey: string | undefined,
     request: MonitoringAnalyticsRequest
   ): Promise<MonitoringAnalyticsResponse> => {
     return withUsageServiceError(async () => {
-      try {
-        const response = await axios.post<MonitoringAnalyticsResponse>(
-          buildUrl(base, '/v0/management/monitoring/analytics'),
-          request,
-          {
-            timeout: USAGE_SERVICE_TIMEOUT_MS,
-            headers: authHeaders(managementKey),
-          }
-        );
-        return response.data;
-      } catch (error) {
-        if (!axios.isAxiosError(error) || error.response?.status !== 404) {
-          throw error;
-        }
-        const usageResponse = await axios.get<UsagePayload>(buildUrl(base, '/v0/management/usage'), {
+      const response = await axios.post<MonitoringAnalyticsResponse>(
+        buildUrl(base, '/v0/management/monitoring/analytics'),
+        request,
+        {
           timeout: USAGE_SERVICE_TIMEOUT_MS,
           headers: authHeaders(managementKey),
-        });
-        return buildFallbackMonitoringAnalytics(usageResponse.data, request);
-      }
+        }
+      );
+      return response.data;
     });
   },
 };

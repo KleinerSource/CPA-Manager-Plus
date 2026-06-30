@@ -34,7 +34,6 @@ import {
   buildTaskBucketsFromAnalytics,
   buildTimelineFromAnalytics,
   buildUsageDetailsFromAnalyticsEvents,
-  mergeAnalyticsEventItems,
 } from '../model/analyticsAdapters';
 import { buildEventRows } from '../model/eventRows';
 import {
@@ -98,16 +97,6 @@ const MONITORING_EVENTS_PAGE_LIMIT = 500;
 const MONITORING_PRESENTATION_CACHE_LIMIT = 24;
 const EMPTY_MONITORING_ANALYTICS_EVENT_ROWS: MonitoringAnalyticsEventRow[] = [];
 
-interface MonitoringEventsPageState {
-  scopeKey: string;
-  beforeMs: number | null;
-  beforeId: number | null;
-  items: MonitoringAnalyticsEventRow[];
-  hasMore: boolean;
-  loadingMore: boolean;
-  lastPageKey: string;
-}
-
 export type MonitoringPresentationSnapshot = Pick<
   UseMonitoringDataReturn,
   | 'summary'
@@ -124,10 +113,7 @@ export type MonitoringPresentationSnapshot = Pick<
   | 'apiKeyRows'
   | 'filterOptions'
   | 'filteredRows'
-  | 'eventsHasMore'
-  | 'eventsLoadingMore'
   | 'eventsTotalCount'
-  | 'eventsLoadedCount'
   | 'lastRefreshedAt'
 >;
 
@@ -142,38 +128,14 @@ interface MonitoringPresentationSnapshotStore {
   lastStableSnapshot: MonitoringPresentationSnapshot | null;
 }
 
-const createEventsPageState = (scopeKey = ''): MonitoringEventsPageState => ({
-  scopeKey,
-  beforeMs: null,
-  beforeId: null,
-  items: [],
-  hasMore: false,
-  loadingMore: false,
-  lastPageKey: '',
-});
-
-const buildEventsPageKey = (
-  scopeKey: string,
-  beforeMs: number | null,
-  pageItems: MonitoringAnalyticsEventRow[],
-  nextBeforeMs: number
-) =>
-  [
-    scopeKey,
-    beforeMs ?? 'root',
-    nextBeforeMs,
-    pageItems.length,
-    pageItems[0]?.event_hash ?? '',
-    pageItems[pageItems.length - 1]?.event_hash ?? '',
-  ].join(':');
-
 export const buildMonitoringEventsScopeKey = (
   timeRange: UseMonitoringDataParams['timeRange'],
   analyticsBounds: { startMs: number; endMs: number } | null,
   searchQuery: string,
   searchApiKeyHash: string | undefined,
   filters: unknown,
-  granularity: string
+  granularity: string,
+  dataScope?: UseMonitoringDataParams['dataScope']
 ) =>
   JSON.stringify({
     range: timeRange,
@@ -187,54 +149,13 @@ export const buildMonitoringEventsScopeKey = (
     searchApiKeyHash,
     filters,
     granularity,
+    dataScope,
   });
-
-export const mergeMonitoringEventsPageItems = (
-  previousItems: MonitoringAnalyticsEventRow[],
-  pageItems: MonitoringAnalyticsEventRow[],
-  requestBeforeMs: number | null
-) => {
-  if (requestBeforeMs) {
-    return mergeAnalyticsEventItems(previousItems, pageItems);
-  }
-  return pageItems;
-};
 
 const uniqueOptionValues = (values: Array<string | null | undefined>) =>
   Array.from(new Set(values.map((value) => String(value || '').trim()).filter(Boolean))).sort(
     (left, right) => left.localeCompare(right)
   );
-
-export const resolveMonitoringDisplayEventItems = ({
-  analyticsData,
-  currentPageItems,
-  eventsPageItems,
-  eventsBeforeMs,
-  dataStale,
-}: {
-  analyticsData: { events?: { items: MonitoringAnalyticsEventRow[] } } | null;
-  currentPageItems: MonitoringAnalyticsEventRow[] | null;
-  eventsPageItems: MonitoringAnalyticsEventRow[];
-  eventsBeforeMs: number | null;
-  dataStale: boolean;
-}): MonitoringAnalyticsEventRow[] => {
-  if (dataStale) {
-    return eventsPageItems.length > 0
-      ? eventsPageItems
-      : (analyticsData?.events?.items ?? EMPTY_MONITORING_ANALYTICS_EVENT_ROWS);
-  }
-
-  if (!currentPageItems) {
-    return eventsPageItems;
-  }
-
-  const existingEventHashes = new Set(eventsPageItems.map((item) => item.event_hash));
-  if (currentPageItems.every((item) => existingEventHashes.has(item.event_hash))) {
-    return eventsPageItems;
-  }
-
-  return mergeMonitoringEventsPageItems(eventsPageItems, currentPageItems, eventsBeforeMs);
-};
 
 export const resolveMonitoringPresentationSnapshot = ({
   computedSnapshot,
@@ -275,15 +196,15 @@ export function useMonitoringData({
   searchQuery,
   searchApiKeyHash,
   scopeFilters,
+  dataScope = 'accounts',
+  eventsPage = 1,
+  eventsPageSize = MONITORING_EVENTS_PAGE_LIMIT,
 }: UseMonitoringDataParams): UseMonitoringDataReturn {
   const [authFiles, setAuthFiles] = useState<AuthFileItem[]>([]);
   const [channels, setChannels] = useState<MonitoringChannelMeta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [analyticsNowMs, setAnalyticsNowMs] = useState(() => Date.now());
-  const [eventsPageState, setEventsPageState] = useState<MonitoringEventsPageState>(() =>
-    createEventsPageState()
-  );
   const [presentationSnapshotStore, setPresentationSnapshotStore] =
     useState<MonitoringPresentationSnapshotStore>(() => ({
       cachedSnapshots: new Map(),
@@ -311,11 +232,6 @@ export function useMonitoringData({
       setChannels(payload.channels);
       setError(payload.error);
       setLoading(false);
-      setEventsPageState((previous) =>
-        previous.beforeMs === null && previous.beforeId === null && !previous.loadingMore
-          ? previous
-          : { ...previous, beforeMs: null, beforeId: null, loadingMore: false }
-      );
       setAnalyticsNowMs(Date.now());
     },
     [config]
@@ -427,7 +343,8 @@ export function useMonitoringData({
           searchQuery,
           searchApiKeyHash,
           analyticsFilters,
-          analyticsGranularity
+          analyticsGranularity,
+          dataScope
         ),
         modelPricesScopeKey,
       ].join('\u001f'),
@@ -435,25 +352,13 @@ export function useMonitoringData({
       analyticsBounds,
       analyticsFilters,
       analyticsGranularity,
+      dataScope,
       modelPricesScopeKey,
       searchApiKeyHash,
       searchQuery,
       timeRange,
     ]
   );
-
-  const activeEventsPageState = useMemo(
-    () =>
-      eventsPageState.scopeKey === eventsScopeKey
-        ? eventsPageState
-        : createEventsPageState(eventsScopeKey),
-    [eventsPageState, eventsScopeKey]
-  );
-  const eventsBeforeMs = activeEventsPageState.beforeMs;
-  const eventsBeforeId = activeEventsPageState.beforeId;
-  const eventItems = activeEventsPageState.items;
-  const eventsHasMore = activeEventsPageState.hasMore;
-  const eventsLoadingMore = activeEventsPageState.loadingMore;
 
   const analytics = useMonitoringAnalytics({
     fromMs: analyticsBounds?.startMs,
@@ -471,112 +376,27 @@ export function useMonitoringData({
       channel_share: true,
       model_stats: true,
       failure_sources: true,
-      account_stats: true,
-      api_key_stats: true,
+      account_stats: dataScope === 'accounts',
+      api_key_stats: dataScope === 'apiKeys',
       filter_options: true,
-      task_buckets: true,
-      recent_failures: 8,
-      events_page: {
-        limit: MONITORING_EVENTS_PAGE_LIMIT,
-        before_ms: eventsBeforeMs,
-        before_id: eventsBeforeId,
-      },
+      recent_failures: dataScope === 'realtime' ? 8 : undefined,
+      events_page:
+        dataScope === 'realtime'
+          ? {
+              limit: eventsPageSize,
+              offset: Math.max(0, (Math.max(1, eventsPage) - 1) * Math.max(1, eventsPageSize)),
+              page: Math.max(1, eventsPage),
+            }
+          : undefined,
       granularity: analyticsGranularity,
     },
     throttleMs: 1_000,
   });
   const analyticsData = analytics.data;
   const currentAnalyticsData = analytics.dataStale ? null : analyticsData;
-  const displayEventItems = useMemo(
-    () =>
-      resolveMonitoringDisplayEventItems({
-        analyticsData,
-        currentPageItems: currentAnalyticsData?.events?.items ?? null,
-        eventsPageItems: eventItems,
-        eventsBeforeMs,
-        dataStale: analytics.dataStale,
-      }),
-    [
-      analytics.dataStale,
-      analyticsData,
-      currentAnalyticsData?.events?.items,
-      eventItems,
-      eventsBeforeMs,
-    ]
-  );
-  const displayEventsHasMore = currentAnalyticsData?.events?.has_more ?? eventsHasMore;
+  const displayEventItems = analyticsData?.events?.items ?? EMPTY_MONITORING_ANALYTICS_EVENT_ROWS;
   const displayEventsTotalCount =
     currentAnalyticsData?.events?.total_count ?? displayEventItems.length;
-  const eventsLoadedCount = Math.min(displayEventItems.length, displayEventsTotalCount);
-
-  useEffect(() => {
-    const page = currentAnalyticsData?.events;
-    if (!page) return;
-    const requestBeforeMs = eventsBeforeMs;
-    const requestBeforeId = eventsBeforeId;
-    const pageKey = buildEventsPageKey(
-      eventsScopeKey,
-      requestBeforeMs,
-      page.items,
-      page.next_before_ms
-    );
-    let cancelled = false;
-    queueMicrotask(() => {
-      if (cancelled) return;
-      setEventsPageState((previous) => {
-        const base =
-          previous.scopeKey === eventsScopeKey ? previous : createEventsPageState(eventsScopeKey);
-        if (base.lastPageKey === pageKey) return base;
-        return {
-          scopeKey: eventsScopeKey,
-          beforeMs: requestBeforeMs,
-          beforeId: requestBeforeId,
-          items: mergeMonitoringEventsPageItems(base.items, page.items, requestBeforeMs),
-          hasMore: page.has_more,
-          loadingMore: false,
-          lastPageKey: pageKey,
-        };
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [currentAnalyticsData?.events, eventsScopeKey, eventsBeforeMs, eventsBeforeId]);
-
-  useEffect(() => {
-    if (analytics.error) {
-      let cancelled = false;
-      queueMicrotask(() => {
-        if (cancelled) return;
-        setEventsPageState((previous) =>
-          previous.loadingMore ? { ...previous, loadingMore: false } : previous
-        );
-      });
-      return () => {
-        cancelled = true;
-      };
-    }
-  }, [analytics.error]);
-
-  const loadMoreEvents = useCallback(() => {
-    if (analytics.loading || eventsLoadingMore || !eventsHasMore) return;
-    const nextBeforeMs = currentAnalyticsData?.events?.next_before_ms;
-    if (!nextBeforeMs) return;
-    const nextBeforeId = currentAnalyticsData?.events?.next_before_id ?? null;
-    setEventsPageState((previous) => {
-      const base =
-        previous.scopeKey === eventsScopeKey ? previous : createEventsPageState(eventsScopeKey);
-      if (base.loadingMore) return base;
-      return { ...base, beforeMs: nextBeforeMs, beforeId: nextBeforeId, loadingMore: true };
-    });
-  }, [
-    currentAnalyticsData?.events?.next_before_ms,
-    currentAnalyticsData?.events?.next_before_id,
-    analytics.loading,
-    eventsScopeKey,
-    eventsHasMore,
-    eventsLoadingMore,
-  ]);
 
   const allRows = useMemo(() => {
     const details = analyticsData
@@ -796,10 +616,7 @@ export function useMonitoringData({
       apiKeyRows,
       filterOptions,
       filteredRows,
-      eventsHasMore: displayEventsHasMore,
-      eventsLoadingMore,
       eventsTotalCount: displayEventsTotalCount,
-      eventsLoadedCount,
       lastRefreshedAt: analytics.lastRefreshedAt,
     }),
     [
@@ -807,10 +624,7 @@ export function useMonitoringData({
       accountRows,
       apiKeyRows,
       channelRows,
-      displayEventsHasMore,
       displayEventsTotalCount,
-      eventsLoadedCount,
-      eventsLoadingMore,
       failureSourceRows,
       filterOptions,
       filteredRows,
@@ -918,14 +732,10 @@ export function useMonitoringData({
     apiKeyRows: presentationSnapshot.apiKeyRows,
     filterOptions: presentationSnapshot.filterOptions,
     filteredRows: presentationSnapshot.filteredRows,
-    eventsHasMore: presentationSnapshot.eventsHasMore,
-    eventsLoadingMore: presentationSnapshot.eventsLoadingMore,
     eventsTotalCount: presentationSnapshot.eventsTotalCount,
-    eventsLoadedCount: presentationSnapshot.eventsLoadedCount,
     lastRefreshedAt: presentationSnapshot.lastRefreshedAt,
     isTransitioningScope: analytics.dataStale,
     hasPresentationSnapshot: presentationResolution.hasPresentationSnapshot,
     refreshMeta,
-    loadMoreEvents,
   };
 }

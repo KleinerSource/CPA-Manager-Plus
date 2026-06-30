@@ -9,7 +9,6 @@ export type VisualConfigFieldPath =
   | 'port'
   | 'errorLogsMaxFiles'
   | 'logsMaxTotalSizeMb'
-  | 'redisUsageQueueRetentionSeconds'
   | 'requestRetry'
   | 'maxRetryCredentials'
   | 'maxRetryInterval'
@@ -27,8 +26,7 @@ export type VisualConfigFieldPath =
 
 export type VisualConfigValidationErrorCode =
   | 'port_range'
-  | 'non_negative_integer'
-  | 'retention_seconds_range';
+  | 'non_negative_integer';
 
 export type VisualConfigValidationErrors = Partial<
   Record<VisualConfigFieldPath, VisualConfigValidationErrorCode>
@@ -113,7 +111,6 @@ export type VisualConfigValues = {
   loggingToFile: boolean;
   logsMaxTotalSizeMb: string;
   errorLogsMaxFiles: string;
-  redisUsageQueueRetentionSeconds: string;
   proxyUrl: string;
   forceModelPrefix: boolean;
   codexForceSuperCategory: boolean;
@@ -193,7 +190,6 @@ export const DEFAULT_VISUAL_VALUES: VisualConfigValues = {
   loggingToFile: false,
   logsMaxTotalSizeMb: '',
   errorLogsMaxFiles: '',
-  redisUsageQueueRetentionSeconds: '',
   proxyUrl: '',
   forceModelPrefix: false,
   codexForceSuperCategory: false,

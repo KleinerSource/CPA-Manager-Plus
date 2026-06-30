@@ -1189,9 +1189,16 @@
 }
 
 .filterToggleChipActive {
-  border-color: color-mix(in srgb, var(--monitor-red) 44%, var(--monitor-line));
-  background: color-mix(in srgb, var(--monitor-red) 14%, var(--monitor-surface));
-  color: var(--monitor-red);
+  border-color: var(--monitor-red);
+  background: var(--monitor-red);
+  color: #fff;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--monitor-red) 28%, transparent);
+}
+
+.filterToggleChipActive:hover {
+  border-color: color-mix(in srgb, var(--monitor-red) 86%, #111827);
+  background: color-mix(in srgb, var(--monitor-red) 90%, #111827);
+  color: #fff;
 }
 
 .realtimeColumnPicker {
@@ -2177,18 +2184,4 @@
   .customRangeModalGrid {
     grid-template-columns: 1fr;
   }
-}
-
-.loadMoreEventsBar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 12px 0 4px;
-}
-
-.loadMoreEventsSummary {
-  color: var(--color-text-muted, #6b7280);
-  font-size: 13px;
 }

@@ -87,8 +87,8 @@ export const ApiKeysCardEditor = memo(function ApiKeysCardEditor({
 
   const resolveAliasServiceBase = useCallback(
     async (): Promise<string> =>
-      featureAvailability.managerServiceAvailable ? featureAvailability.managerServiceBase : '',
-    [featureAvailability.managerServiceAvailable, featureAvailability.managerServiceBase]
+      featureAvailability.modelPricesAvailable ? featureAvailability.serviceBase : '',
+    [featureAvailability.modelPricesAvailable, featureAvailability.serviceBase]
   );
 
   useEffect(() => {

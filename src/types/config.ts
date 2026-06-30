@@ -32,7 +32,6 @@ export interface Config {
   quotaExceeded?: QuotaExceededConfig;
   clean?: AuthPoolCleanConfig;
   usageStatisticsEnabled?: boolean;
-  redisUsageQueueRetentionSeconds?: number;
   requestLog?: boolean;
   loggingToFile?: boolean;
   logsMaxTotalSizeMb?: number;
@@ -58,7 +57,6 @@ export type RawConfigSection =
   | 'request-retry'
   | 'quota-exceeded'
   | 'usage-statistics-enabled'
-  | 'redis-usage-queue-retention-seconds'
   | 'request-log'
   | 'logging-to-file'
   | 'logs-max-total-size-mb'

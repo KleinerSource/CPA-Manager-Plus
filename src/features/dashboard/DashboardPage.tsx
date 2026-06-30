@@ -95,7 +95,7 @@ export function DashboardPage() {
   const [collectorError, setCollectorError] = useState('');
   const [errorLogs, setErrorLogs] = useState<ErrorLogFile[]>([]);
   const [errorLogsLoading, setErrorLogsLoading] = useState(false);
-  const [managerCpaBase, setManagerCpaBase] = useState('');
+  const [currentServiceBase, setCurrentServiceBase] = useState('');
   const [displayMeta, setDisplayMeta] = useState<DashboardDisplayMeta>({
     authFiles: [],
     channels: [],
@@ -257,7 +257,7 @@ export function DashboardPage() {
       setCollectorLoading(false);
       setErrorLogs([]);
       setErrorLogsLoading(false);
-      setManagerCpaBase('');
+      setCurrentServiceBase('');
       setDisplayMeta({ authFiles: [], channels: [], apiKeyAliases: [] });
       return;
     }
@@ -265,11 +265,10 @@ export function DashboardPage() {
     setCollectorLoading(true);
     setErrorLogsLoading(true);
 
-    const [collectorResult, logsResult, managerConfigResult, metaResult, aliasesResult] =
+    const [collectorResult, logsResult, metaResult, aliasesResult] =
       await Promise.allSettled([
         usageServiceApi.getStatus(usageServiceBase, managementKey),
         logsApi.fetchErrorLogs(),
-        usageServiceApi.getManagerConfig(usageServiceBase, managementKey),
         loadMonitoringMetaPayload(config),
         usageServiceApi.getApiKeyAliases(usageServiceBase, managementKey),
       ]);
@@ -291,11 +290,7 @@ export function DashboardPage() {
     }
     setErrorLogsLoading(false);
 
-    setManagerCpaBase(
-      managerConfigResult.status === 'fulfilled'
-        ? managerConfigResult.value.config.cpaConnection?.cpaBaseUrl || apiBase || ''
-        : apiBase || ''
-    );
+    setCurrentServiceBase(apiBase || usageServiceBase || '');
 
     setDisplayMeta((current) => ({
       authFiles: metaResult.status === 'fulfilled' ? metaResult.value.authFiles : current.authFiles,
@@ -481,7 +476,7 @@ export function DashboardPage() {
         <VersionCard
           appVersion={__APP_VERSION__ || t('dashboard.version_unknown')}
           apiVersion={serverVersion || t('dashboard.version_unknown')}
-          cpaBase={managerCpaBase || apiBase || ''}
+          cpaBase={currentServiceBase || apiBase || ''}
           serverBuildDate={serverBuildDate || undefined}
           connectionStatus={connectionStatus}
           refreshSignal={cardRefreshSignal}

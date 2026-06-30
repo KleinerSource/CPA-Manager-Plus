@@ -4,6 +4,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ApiKeyAlias } from '@/services/api/usageService';
 import type { ModelPrice } from '@/utils/usage';
 
+const monitoringAnalyticsMockState = vi.hoisted(() => ({
+  calls: [] as Array<{ include?: Record<string, unknown> }>,
+}));
+
 vi.mock('../services/monitoringMetaService', () => ({
   loadMonitoringMetaPayload: vi.fn(async () => ({
     authFiles: [],
@@ -13,17 +17,20 @@ vi.mock('../services/monitoringMetaService', () => ({
 }));
 
 vi.mock('./useMonitoringAnalytics', () => ({
-  useMonitoringAnalytics: () => ({
-    enabled: true,
-    loading: false,
-    error: '',
-    data: null,
-    dataStale: false,
-    lastRefreshedAt: null,
-    serviceBase: 'http://manager.local',
-    unavailableReason: '',
-    refresh: vi.fn(),
-  }),
+  useMonitoringAnalytics: (params: { include?: Record<string, unknown> }) => {
+    monitoringAnalyticsMockState.calls.push(params);
+    return {
+      enabled: true,
+      loading: false,
+      error: '',
+      data: null,
+      dataStale: false,
+      lastRefreshedAt: null,
+      serviceBase: 'http://service.local',
+      unavailableReason: '',
+      refresh: vi.fn(),
+    };
+  },
 }));
 
 import { useMonitoringData } from './useMonitoringData';
@@ -47,6 +54,7 @@ describe('useMonitoringData render stability', () => {
   afterEach(() => {
     renderer?.unmount();
     renderer = null;
+    monitoringAnalyticsMockState.calls = [];
   });
 
   it('settles while analytics events are still waiting for the first page', async () => {
@@ -78,5 +86,62 @@ describe('useMonitoringData render stability', () => {
     });
 
     expect(renderCount).toBeLessThan(10);
+  });
+
+  it('does not request realtime events for the default account tab', async () => {
+    function Harness() {
+      useMonitoringData({
+        config: null,
+        modelPrices: EMPTY_MODEL_PRICES,
+        apiKeyAliases: EMPTY_API_KEY_ALIASES,
+        timeRange: 'today',
+        customTimeRange: null,
+        searchQuery: '',
+        searchApiKeyHash: '',
+        scopeFilters: ALL_SCOPE_FILTERS,
+      });
+      return null;
+    }
+
+    await act(async () => {
+      renderer = create(<Harness />);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+
+    const include =
+      monitoringAnalyticsMockState.calls[monitoringAnalyticsMockState.calls.length - 1]?.include;
+    expect(include?.account_stats).toBe(true);
+    expect(include?.api_key_stats).toBe(false);
+    expect(include?.events_page).toBeUndefined();
+  });
+
+  it('requests realtime events only when the realtime tab is active', async () => {
+    function Harness() {
+      useMonitoringData({
+        config: null,
+        modelPrices: EMPTY_MODEL_PRICES,
+        apiKeyAliases: EMPTY_API_KEY_ALIASES,
+        timeRange: 'today',
+        customTimeRange: null,
+        searchQuery: '',
+        searchApiKeyHash: '',
+        scopeFilters: ALL_SCOPE_FILTERS,
+        dataScope: 'realtime',
+        eventsPage: 1,
+        eventsPageSize: 10,
+      });
+      return null;
+    }
+
+    await act(async () => {
+      renderer = create(<Harness />);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+
+    const include =
+      monitoringAnalyticsMockState.calls[monitoringAnalyticsMockState.calls.length - 1]?.include;
+    expect(include?.account_stats).toBe(false);
+    expect(include?.api_key_stats).toBe(false);
+    expect(include?.events_page).toEqual({ limit: 10, offset: 0, page: 1 });
   });
 });

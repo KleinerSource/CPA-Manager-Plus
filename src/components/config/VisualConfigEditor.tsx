@@ -214,10 +214,6 @@ export function VisualConfigEditor({
   const portError = getValidationMessage(t, validationErrors?.port);
   const logsMaxSizeError = getValidationMessage(t, validationErrors?.logsMaxTotalSizeMb);
   const errorLogsMaxFilesError = getValidationMessage(t, validationErrors?.errorLogsMaxFiles);
-  const redisUsageQueueRetentionError = getValidationMessage(
-    t,
-    validationErrors?.redisUsageQueueRetentionSeconds
-  );
   const requestRetryError = getValidationMessage(t, validationErrors?.requestRetry);
   const maxRetryCredentialsError = getValidationMessage(t, validationErrors?.maxRetryCredentials);
   const maxRetryIntervalError = getValidationMessage(t, validationErrors?.maxRetryInterval);
@@ -330,7 +326,6 @@ export function VisualConfigEditor({
         errorCount: countErrors([
           'logsMaxTotalSizeMb',
           'errorLogsMaxFiles',
-          'redisUsageQueueRetentionSeconds',
         ]),
       },
       {
@@ -809,20 +804,6 @@ export function VisualConfigEditor({
                   onChange={(e) => onChange({ errorLogsMaxFiles: e.target.value })}
                   disabled={disabled}
                   error={errorLogsMaxFilesError}
-                />
-                <Input
-                  label={t('config_management.visual.sections.system.redis_usage_queue_retention')}
-                  type="number"
-                  min="0"
-                  max="3600"
-                  placeholder="60"
-                  value={values.redisUsageQueueRetentionSeconds}
-                  onChange={(e) => onChange({ redisUsageQueueRetentionSeconds: e.target.value })}
-                  disabled={disabled}
-                  hint={t(
-                    'config_management.visual.sections.system.redis_usage_queue_retention_hint'
-                  )}
-                  error={redisUsageQueueRetentionError}
                 />
               </SectionGrid>
             </SectionStack>

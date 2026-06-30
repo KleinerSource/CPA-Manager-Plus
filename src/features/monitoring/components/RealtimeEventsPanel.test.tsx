@@ -38,11 +38,7 @@ const t = ((key: string, options?: Record<string, unknown>) => {
     'monitoring.filter_status_failed': 'Failed only',
     'monitoring.filter_provider': 'Provider',
     'monitoring.input_tokens_short': 'Input',
-    'monitoring.load_more_events': 'Load more',
     'monitoring.log_rows': 'Rows',
-    'monitoring.no_more_events': 'No more events',
-    'monitoring.events_loaded_summary': 'Loaded {{loaded}} of {{total}} events',
-    'monitoring.events_all_loaded': 'All {{total}} events loaded',
     'monitoring.reasoning_effort': 'Effort',
     'monitoring.reasoning_effort_short': 'Effort',
     'monitoring.recent_failures': 'Failures',
@@ -56,7 +52,19 @@ const t = ((key: string, options?: Record<string, unknown>) => {
     'monitoring.result_failed': 'Failed',
     'monitoring.result_success': 'Success',
     'monitoring.output_tokens_short': 'Output',
-    'monitoring.service_tier_short': 'Tier',
+    'monitoring.page_size_label': 'Per page',
+    'monitoring.page_size_label_short': 'Rows',
+    'monitoring.page_size_option': '{{count}} / page',
+    'monitoring.pagination_info': 'Page {{current}} / {{total}} · Showing {{start}}-{{end}} / {{count}}',
+    'monitoring.pagination_jump_label': 'Jump to page',
+    'monitoring.pagination_jump_prefix': 'Go to',
+    'monitoring.pagination_jump_suffix': 'page',
+    'monitoring.pagination_next': 'Next',
+    'monitoring.pagination_prev': 'Previous',
+    'monitoring.service_tier': 'Speed',
+    'monitoring.service_tier_short': 'Speed',
+    'monitoring.service_tier_fast': 'Fast',
+    'monitoring.service_tier_standard': 'Standard',
     'monitoring.this_call_cost': 'Cost',
     'monitoring.this_call_usage': 'Usage',
     'monitoring.ttft_short': 'TTFT',
@@ -81,10 +89,7 @@ type PanelRow = MonitoringEventRow & {
 
 type PanelOverrides = {
   accountDisplayMode?: AccountDisplayMode;
-  eventsHasMore?: boolean;
-  eventsLoadingMore?: boolean;
   eventsTotalCount?: number;
-  eventsLoadedCount?: number;
 };
 
 const baseRow = (overrides: Partial<PanelRow> = {}): PanelRow => ({
@@ -152,11 +157,7 @@ const renderPanel = (row: PanelRow, overrides: PanelOverrides = {}) =>
       pageSize={10}
       scopedFailureCount={row.failed ? 1 : 0}
       failedOnlyActive={false}
-      eventsHasMore={overrides.eventsHasMore ?? false}
-      eventsLoadingMore={overrides.eventsLoadingMore ?? false}
       eventsTotalCount={overrides.eventsTotalCount ?? 1}
-      eventsLoadedCount={overrides.eventsLoadedCount ?? 1}
-      overallLoading={false}
       hasPrices={false}
       accountDisplayMode={overrides.accountDisplayMode ?? 'masked'}
       visibleColumns={[...DEFAULT_REALTIME_COLUMNS]}
@@ -171,7 +172,6 @@ const renderPanel = (row: PanelRow, overrides: PanelOverrides = {}) =>
       onResetColumns={noop}
       onPageChange={noop}
       onPageSizeChange={noop}
-      onLoadMoreEvents={noop}
     />
   );
 
@@ -211,7 +211,8 @@ describe('RealtimeEventsPanel', () => {
     expect(markup).not.toContain('>Executor: codex<');
     expect(markup).not.toContain('Executor: codex');
     expect(markup).toContain('medium');
-    expect(markup).toContain('Tier: priority');
+    expect(markup).toContain('Speed: Fast');
+    expect(markup).not.toContain('priority');
     expect(markup).toContain('client-gpt');
     expect(markup).toContain('gpt-5.4');
     expect(markup).not.toContain('Resolved');
@@ -359,37 +360,27 @@ describe('RealtimeEventsPanel', () => {
     expect(markup).toContain('Cache Write 1');
   });
 
-  it('shows the loaded vs total summary with a load-more action when more pages exist', () => {
-    const markup = renderPanel(baseRow(), {
-      eventsHasMore: true,
-      eventsLoadedCount: 500,
-      eventsTotalCount: 8000,
-    });
+  it('does not show Codex speed for non-Codex rows', () => {
+    const markup = renderPanel(
+      baseRow({
+        provider: 'openai',
+        channel: 'openai',
+        executorType: '',
+        serviceTier: 'priority',
+      })
+    );
 
-    expect(markup).toContain('Loaded 500 of 8000 events');
-    expect(markup).toContain('Load more');
-    expect(markup).not.toContain('Loaded 8000 of 8000');
+    expect(markup).not.toContain('Speed: Fast');
+    expect(markup).not.toContain('Speed: Standard');
   });
 
-  it('shows the all-loaded summary without a load-more action once fully loaded', () => {
+  it('uses backend total count in pagination without rendering load-more controls', () => {
     const markup = renderPanel(baseRow(), {
-      eventsHasMore: false,
-      eventsLoadedCount: 8000,
       eventsTotalCount: 8000,
     });
 
-    expect(markup).toContain('All 8000 events loaded');
+    expect(markup).toContain('Showing 1-1 / 8000');
     expect(markup).not.toContain('Load more');
-  });
-
-  it('falls back to the loaded count when the backend omits a larger total', () => {
-    const markup = renderPanel(baseRow(), {
-      eventsHasMore: true,
-      eventsLoadedCount: 500,
-      eventsTotalCount: 500,
-    });
-
-    expect(markup).toContain('Loaded 500 of 500 events');
-    expect(markup).toContain('Load more');
+    expect(markup).not.toContain('Loaded 500 of 8000 events');
   });
 });

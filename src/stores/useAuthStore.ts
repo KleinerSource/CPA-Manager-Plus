@@ -16,10 +16,8 @@ import type {
 import { STORAGE_KEY_AUTH } from '@/utils/constants';
 import { obfuscatedStorage } from '@/services/storage/secureStorage';
 import { apiClient } from '@/services/api/client';
-import { usageServiceApi } from '@/services/api/usageService';
 import { useConfigStore } from './useConfigStore';
 import { useModelsStore } from './useModelsStore';
-import { useUsageServiceStore } from './useUsageServiceStore';
 import { detectApiBaseFromLocation, normalizeApiBase, resolveRuntimeApiBase } from '@/utils/connection';
 
 interface AuthStoreState extends AuthState {
@@ -59,10 +57,7 @@ const sessionMatchesExpectedRuntime = ({
   const normalizedExpectedPanelBase = normalizeApiBase(expectedPanelBase || '');
   if (!expectedMode) return true;
   if (sessionMode && sessionMode !== expectedMode) return false;
-  if (expectedMode === 'manager_embedded' && normalizedExpectedPanelBase) {
-    return resolvedBase === normalizedExpectedPanelBase;
-  }
-  if (expectedMode === 'external_panel' && normalizedExpectedPanelBase) {
+  if (normalizedExpectedPanelBase) {
     return resolvedBase === normalizedExpectedPanelBase;
   }
   return true;
@@ -198,26 +193,7 @@ export const useAuthStore = create<AuthStoreState>()(
           });
 
           // 测试连接 - 获取配置
-          try {
-            await useConfigStore.getState().fetchConfig(undefined, true);
-          } catch (error) {
-            if (sessionMode !== 'manager_embedded') {
-              throw error;
-            }
-            await usageServiceApi.getManagerConfig(apiBase, managementKey);
-            useConfigStore.getState().clearCache();
-            useUsageServiceStore.getState().setUsageServiceConfig(
-              {
-                enabled: true,
-                serviceBase: apiBase,
-              },
-              {
-                panelBase: sessionPanelBase || apiBase,
-                panelHostMode: 'manager_embedded',
-              }
-            );
-            return markAuthenticated({ recoveryMode: 'manager_config' });
-          }
+          await useConfigStore.getState().fetchConfig(undefined, true);
 
           // 登录成功
           return markAuthenticated();
@@ -241,7 +217,6 @@ export const useAuthStore = create<AuthStoreState>()(
         restoreSessionPromise = null;
         useConfigStore.getState().clearCache();
         useModelsStore.getState().clearCache();
-        useUsageServiceStore.getState().clearUsageServiceConfig();
         apiClient.setConfig({ apiBase: '', managementKey: '' });
         set({
           isAuthenticated: false,

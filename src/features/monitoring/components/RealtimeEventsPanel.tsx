@@ -9,7 +9,6 @@ import {
   type ReactNode,
 } from 'react';
 import type { TFunction } from 'i18next';
-import { Button } from '@/components/ui/Button';
 import {
   IconCopy,
   IconEye,
@@ -68,11 +67,7 @@ type RealtimeEventsPanelProps = {
   pageSize: number;
   scopedFailureCount: number;
   failedOnlyActive: boolean;
-  eventsHasMore: boolean;
-  eventsLoadingMore: boolean;
   eventsTotalCount: number;
-  eventsLoadedCount: number;
-  overallLoading: boolean;
   hasPrices: boolean;
   accountDisplayMode: AccountDisplayMode;
   visibleColumns: RealtimeColumnKey[];
@@ -87,7 +82,6 @@ type RealtimeEventsPanelProps = {
   onResetColumns: () => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
-  onLoadMoreEvents: () => void;
 };
 
 export type RealtimeEventsPanelActionsProps = {
@@ -148,6 +142,19 @@ const formatShortHash = (value: string | null | undefined) => {
   const trimmed = formatReadableText(value);
   return trimmed ? `#${trimmed.slice(0, 8)}` : '';
 };
+
+const resolveServiceSpeedLabel = (serviceTier: string | null | undefined, t: TFunction) => {
+  const normalized = String(serviceTier || '').trim().toLowerCase();
+  if (normalized === 'priority' || normalized === 'fast') {
+    return t('monitoring.service_tier_fast');
+  }
+  return t('monitoring.service_tier_standard');
+};
+
+const isCodexRealtimeRow = (row: MonitoringEventRow) =>
+  [row.provider, row.channel, row.executorType]
+    .map((value) => String(value || '').trim().toLowerCase())
+    .some((value) => value === 'codex');
 
 const buildRealtimeApiKeyDisplay = (row: MonitoringEventRow, t: TFunction) => {
   const label = formatReadableText(row.apiKeyLabel);
@@ -440,6 +447,7 @@ export function RealtimeEventsPanelActions({
           .join(' ')}
         onClick={onToggleFailedOnly}
         title={t('monitoring.filter_status_failed')}
+        aria-pressed={failedOnlyActive}
       >
         <IconFilter size={14} aria-hidden="true" />
         {failedOnlyLabel}
@@ -490,11 +498,7 @@ export function RealtimeEventsPanel({
   pageSize,
   scopedFailureCount,
   failedOnlyActive,
-  eventsHasMore,
-  eventsLoadingMore,
   eventsTotalCount,
-  eventsLoadedCount,
-  overallLoading,
   hasPrices,
   accountDisplayMode,
   visibleColumns,
@@ -509,7 +513,6 @@ export function RealtimeEventsPanel({
   onResetColumns,
   onPageChange,
   onPageSizeChange,
-  onLoadMoreEvents,
 }: RealtimeEventsPanelProps) {
   const tooltipIdPrefix = useId();
   const showNotification = useNotificationStore((state) => state.showNotification);
@@ -609,7 +612,9 @@ export function RealtimeEventsPanel({
     const showResolvedModel =
       row.resolvedModel && row.resolvedModel.trim() && row.resolvedModel.trim() !== row.model;
     const reasoningEffort = formatOptionalText(row.reasoningEffort);
-    const serviceTier = formatOptionalText(row.serviceTier);
+    const serviceSpeedLabel = isCodexRealtimeRow(row)
+      ? resolveServiceSpeedLabel(row.serviceTier, t)
+      : '';
     const failureDetails = buildFailureDetails(row, t);
     const failureTooltipId = failureDetails
       ? `${tooltipIdPrefix}-failure-tooltip-${row.id}`
@@ -668,8 +673,8 @@ export function RealtimeEventsPanel({
             ) : (
               <span className={styles.mutedCell}>-</span>
             )}
-            {serviceTier !== '-' ? (
-              <small>{`${shortLabel(t, 'monitoring.service_tier_short', 'monitoring.service_tier')}: ${serviceTier}`}</small>
+            {serviceSpeedLabel ? (
+              <small>{`${shortLabel(t, 'monitoring.service_tier_short', 'monitoring.service_tier')}: ${serviceSpeedLabel}`}</small>
             ) : null}
           </div>
         );
@@ -861,7 +866,7 @@ export function RealtimeEventsPanel({
         </table>
       </div>
       <PaginationControls
-        count={rows.length}
+        count={Math.max(eventsTotalCount, rows.length)}
         currentPage={pagination.currentPage}
         totalPages={pagination.totalPages}
         startItem={pagination.startItem}
@@ -872,28 +877,6 @@ export function RealtimeEventsPanel({
         onPageSizeChange={onPageSizeChange}
         t={t}
       />
-      {rows.length > 0 ? (
-        <div className={styles.loadMoreEventsBar}>
-          <span className={styles.loadMoreEventsSummary}>
-            {eventsHasMore
-              ? t('monitoring.events_loaded_summary', {
-                  loaded: eventsLoadedCount,
-                  total: eventsTotalCount,
-                })
-              : t('monitoring.events_all_loaded', { total: eventsTotalCount })}
-          </span>
-          {eventsHasMore ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={onLoadMoreEvents}
-              disabled={eventsLoadingMore || overallLoading}
-            >
-              {eventsLoadingMore ? t('common.loading') : t('monitoring.load_more_events')}
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
     </>
   );
 

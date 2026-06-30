@@ -3,7 +3,7 @@
  * 基于原项目 src/modules/login.js 和 src/core/connection.js
  */
 
-export type AuthSessionMode = 'manager_embedded' | 'external_panel';
+export type AuthSessionMode = 'local';
 
 // 登录凭据
 export interface LoginCredentials {
@@ -14,7 +14,7 @@ export interface LoginCredentials {
   sessionPanelBase?: string;
 }
 
-export type LoginRecoveryMode = 'manager_config';
+export type LoginRecoveryMode = never;
 
 export interface LoginResult {
   recoveryMode?: LoginRecoveryMode;

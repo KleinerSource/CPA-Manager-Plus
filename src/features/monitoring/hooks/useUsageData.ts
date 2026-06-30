@@ -63,11 +63,10 @@ export function useUsageData({
   const [usageServiceAvailable, setUsageServiceAvailable] = useState(false);
   const requestIdRef = useRef(0);
   const aliasRequestIdRef = useRef(0);
-  const managerServiceAvailable = featureAvailability.managerServiceAvailable;
   const modelPriceServiceBase =
-    featureAvailability.modelPricesAvailable ? featureAvailability.managerServiceBase : '';
+    featureAvailability.modelPricesAvailable ? featureAvailability.serviceBase : '';
   const usageEventsServiceBase = featureAvailability.requestMonitoringAvailable
-    ? featureAvailability.managerServiceBase
+    ? featureAvailability.serviceBase
     : '';
 
   const getModelPricesFromApi = useCallback(async (): Promise<ModelPricesResponse> => {
@@ -187,7 +186,9 @@ export function useUsageData({
         return;
       }
       setUsageServiceAvailable(true);
-      const payload = await usageServiceApi.getUsage(usageEventsServiceBase, managementKey);
+      const payload = await usageServiceApi.getUsage(usageEventsServiceBase, managementKey, {
+        includeDetails: true,
+      });
       if (requestIdRef.current !== requestId) return;
       setUsage(payload ?? null);
       setLastRefreshedAt(new Date());
@@ -241,7 +242,7 @@ export function useUsageData({
     lastRefreshedAt,
     modelPrices,
     apiKeyAliases,
-    usageServiceAvailable: managerServiceAvailable || usageServiceAvailable,
+    usageServiceAvailable,
     setModelPrices,
     loadApiKeyAliases,
     syncModelPrices,

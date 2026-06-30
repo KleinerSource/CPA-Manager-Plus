@@ -322,15 +322,11 @@ export function MonitoringCenterPage() {
     apiKeyRows: monitoringApiKeyRows,
     filterOptions: monitoringFilterOptions,
     filteredRows,
-    eventsHasMore,
-    eventsLoadingMore,
     eventsTotalCount,
-    eventsLoadedCount,
     lastRefreshedAt: monitoringLastRefreshedAt,
     isTransitioningScope: monitoringScopeTransitioning,
     hasPresentationSnapshot: hasMonitoringPresentationSnapshot,
     refreshMeta,
-    loadMoreEvents,
   } = useMonitoringData({
     config,
     modelPrices,
@@ -340,6 +336,9 @@ export function MonitoringCenterPage() {
     searchQuery: deferredSearch,
     searchApiKeyHash: deferredSearchApiKeyHash,
     scopeFilters: monitoringScopeFilters,
+    dataScope: activeDataTab,
+    eventsPage: realtimePage,
+    eventsPageSize: realtimePageSize,
   });
 
   const refreshAll = useCallback(async () => {
@@ -535,8 +534,21 @@ export function MonitoringCenterPage() {
     [apiKeyPage, apiKeyPageSize, apiKeyRows]
   );
   const realtimePagination = useMemo(
-    () => buildPaginationState(realtimeLogRows, realtimePage, realtimePageSize),
-    [realtimeLogRows, realtimePage, realtimePageSize]
+    () => {
+      const totalCount = Math.max(eventsTotalCount, realtimeLogRows.length);
+      const safePageSize = Math.max(1, realtimePageSize);
+      const totalPages = Math.max(1, Math.ceil(totalCount / safePageSize));
+      const currentPage = Math.min(Math.max(1, realtimePage), totalPages);
+      const startItem = totalCount > 0 ? (currentPage - 1) * safePageSize + 1 : 0;
+      return {
+        currentPage,
+        totalPages,
+        pageItems: realtimeLogRows,
+        startItem,
+        endItem: totalCount > 0 ? Math.min(startItem + realtimeLogRows.length - 1, totalCount) : 0,
+      };
+    },
+    [eventsTotalCount, realtimeLogRows, realtimePage, realtimePageSize]
   );
   const accountPageResetState = useMemo<AccountOverviewPageResetState>(
     () => ({
@@ -663,22 +675,24 @@ export function MonitoringCenterPage() {
     const failureCount = scopedFailureCount;
     const realtimeHasFailure = failureCount > 0;
     const realtimeBadge = realtimeHasFailure ? failureCount : formatCompactNumber(totalCalls);
+    const accountBadgeCount = accountRows.length || monitoringFilterOptions.accountRows.length;
+    const apiKeyBadgeCount = apiKeyRows.length || monitoringFilterOptions.apiKeyRows.length;
     return [
       {
         id: 'accounts',
         label: shortLabel(t, 'monitoring.data_tab_accounts_short', 'monitoring.data_tab_accounts'),
         fullLabel: t('monitoring.data_tab_accounts'),
         icon: 'accounts',
-        badge: accountRows.length,
-        badgeTitle: t('monitoring.data_tab_accounts_badge_title', { count: accountRows.length }),
+        badge: accountBadgeCount,
+        badgeTitle: t('monitoring.data_tab_accounts_badge_title', { count: accountBadgeCount }),
       },
       {
         id: 'apiKeys',
         label: shortLabel(t, 'monitoring.data_tab_api_keys_short', 'monitoring.data_tab_api_keys'),
         fullLabel: t('monitoring.data_tab_api_keys'),
         icon: 'apiKeys',
-        badge: apiKeyRows.length,
-        badgeTitle: t('monitoring.data_tab_api_keys_badge_title', { count: apiKeyRows.length }),
+        badge: apiKeyBadgeCount,
+        badgeTitle: t('monitoring.data_tab_api_keys_badge_title', { count: apiKeyBadgeCount }),
       },
       {
         id: 'realtime',
@@ -693,7 +707,15 @@ export function MonitoringCenterPage() {
         }),
       },
     ];
-  }, [accountRows.length, apiKeyRows.length, scopedFailureCount, scopedSummary.totalCalls, t]);
+  }, [
+    accountRows.length,
+    apiKeyRows.length,
+    monitoringFilterOptions.accountRows.length,
+    monitoringFilterOptions.apiKeyRows.length,
+    scopedFailureCount,
+    scopedSummary.totalCalls,
+    t,
+  ]);
 
   const handleDataTabChange = useCallback((tab: MonitoringDataTab) => {
     setActiveDataTab(tab);
@@ -1386,11 +1408,7 @@ export function MonitoringCenterPage() {
               pageSize={realtimePageSize}
               scopedFailureCount={scopedFailureCount}
               failedOnlyActive={failedOnlyActive}
-              eventsHasMore={eventsHasMore}
-              eventsLoadingMore={eventsLoadingMore}
               eventsTotalCount={eventsTotalCount}
-              eventsLoadedCount={eventsLoadedCount}
-              overallLoading={overallLoading}
               hasPrices={hasPrices}
               accountDisplayMode={accountDisplayMode}
               visibleColumns={realtimeColumns}
@@ -1405,7 +1423,6 @@ export function MonitoringCenterPage() {
               onResetColumns={resetRealtimeColumns}
               onPageChange={setRealtimePage}
               onPageSizeChange={handleRealtimePageSizeChange}
-              onLoadMoreEvents={loadMoreEvents}
             />
           );
         }}

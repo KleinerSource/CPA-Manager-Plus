@@ -121,8 +121,6 @@ export function useMonitoringAnalytics({
   const activeDataScopeKey = dataScopeKey || requestKey;
   const serviceBase = availability.serviceBase;
   const enabled = availability.available && Boolean(serviceBase) && Boolean(request);
-  const nativeUsageAnalytics =
-    availability.available && !availability.managerServiceAvailable && Boolean(serviceBase);
 
   const refresh = useCallback(
     async (options: MonitoringAnalyticsRefreshOptions = {}) => {
@@ -153,9 +151,11 @@ export function useMonitoringAnalytics({
       setError('');
 
       try {
-        const response = nativeUsageAnalytics
-          ? await monitoringAnalyticsApi.getNativeUsageAnalytics(serviceBase, managementKey, request)
-          : await monitoringAnalyticsApi.getAnalytics(serviceBase, managementKey, request);
+        const response = await monitoringAnalyticsApi.getAnalytics(
+          serviceBase,
+          managementKey,
+          request
+        );
         if (requestIdRef.current !== requestId) return;
         setData(response);
         setDataScopeStateKey(activeDataScopeKey);
@@ -173,7 +173,6 @@ export function useMonitoringAnalytics({
       activeDataScopeKey,
       enabled,
       managementKey,
-      nativeUsageAnalytics,
       request,
       requestKey,
       serviceBase,

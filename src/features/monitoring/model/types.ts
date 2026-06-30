@@ -339,6 +339,8 @@ export interface MonitoringScopeFilters {
   status?: 'all' | 'success' | 'failed';
 }
 
+export type MonitoringDataScope = 'accounts' | 'apiKeys' | 'realtime';
+
 export interface UseMonitoringDataParams {
   usage?: unknown;
   config: Config | null | undefined;
@@ -349,6 +351,9 @@ export interface UseMonitoringDataParams {
   searchQuery: string;
   searchApiKeyHash?: string;
   scopeFilters?: MonitoringScopeFilters;
+  dataScope?: MonitoringDataScope;
+  eventsPage?: number;
+  eventsPageSize?: number;
 }
 
 export interface UseMonitoringDataReturn {
@@ -372,15 +377,11 @@ export interface UseMonitoringDataReturn {
   apiKeyRows: MonitoringApiKeyRow[];
   filterOptions: MonitoringFilterOptions;
   filteredRows: MonitoringEventRow[];
-  eventsHasMore: boolean;
-  eventsLoadingMore: boolean;
   eventsTotalCount: number;
-  eventsLoadedCount: number;
   lastRefreshedAt: Date | null;
   isTransitioningScope: boolean;
   hasPresentationSnapshot: boolean;
   refreshMeta: (showLoading?: boolean) => Promise<void>;
-  loadMoreEvents: () => void;
 }
 
 export type MonitoringMetaPayload = {

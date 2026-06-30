@@ -1,14 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  isUsageServiceId,
-  normalizeUsageServiceBase,
-  usageServiceApi,
-  type ManagerConfig,
-} from '@/services/api/usageService';
+import { usageServiceApi } from '@/services/api/usageService';
 import { useAuthStore } from '@/stores';
-import { detectApiBaseFromLocation } from '@/utils/connection';
-
-export type PanelHostMode = 'manager_embedded' | 'external_panel';
+import { detectApiBaseFromLocation, normalizeApiBase } from '@/utils/connection';
 
 export type PanelFeatureUnavailableReason =
   | 'checking'
@@ -18,46 +11,13 @@ export type PanelFeatureUnavailableReason =
 
 export interface PanelFeatureAvailability {
   checking: boolean;
-  panelHostMode: PanelHostMode;
   panelBase: string;
-  managerServiceBase: string;
-  managerServiceAvailable: boolean;
+  serviceBase: string;
+  serviceAvailable: boolean;
   requestMonitoringAvailable: boolean;
   modelPricesAvailable: boolean;
-  serverCodexInspectionAvailable: boolean;
-  dockerSetupAvailable: boolean;
-  externalManagerConfigAvailable: boolean;
   reason: PanelFeatureUnavailableReason | '';
 }
-
-export interface ResolvePanelFeatureAvailabilityInput {
-  checking?: boolean;
-  panelHostedByUsageService: boolean;
-  panelBase: string;
-  managerServiceBase: string;
-  managerConfig: ManagerConfig | null;
-  hasManagerCandidate: boolean;
-  managementKey: string;
-}
-
-const normalizeBase = (value?: string) => normalizeUsageServiceBase(value || '');
-
-const buildUnavailableState = (
-  input: ResolvePanelFeatureAvailabilityInput,
-  reason: PanelFeatureUnavailableReason
-): PanelFeatureAvailability => ({
-  checking: input.checking === true,
-  panelHostMode: input.panelHostedByUsageService ? 'manager_embedded' : 'external_panel',
-  panelBase: normalizeBase(input.panelBase),
-  managerServiceBase: '',
-  managerServiceAvailable: false,
-  requestMonitoringAvailable: false,
-  modelPricesAvailable: false,
-  serverCodexInspectionAvailable: false,
-  dockerSetupAvailable: input.panelHostedByUsageService,
-  externalManagerConfigAvailable: false,
-  reason,
-});
 
 export function buildNativeRequestMonitoringAvailability({
   apiBase,
@@ -68,96 +28,43 @@ export function buildNativeRequestMonitoringAvailability({
   panelBase: string;
   checking?: boolean;
 }): PanelFeatureAvailability {
+  const serviceBase = normalizeApiBase(apiBase);
   return {
     checking,
-    panelHostMode: 'external_panel',
-    panelBase: normalizeBase(panelBase),
-    managerServiceBase: normalizeBase(apiBase),
-    managerServiceAvailable: false,
+    panelBase: normalizeApiBase(panelBase),
+    serviceBase,
+    serviceAvailable: Boolean(serviceBase),
     requestMonitoringAvailable: true,
     modelPricesAvailable: true,
-    serverCodexInspectionAvailable: false,
-    dockerSetupAvailable: false,
-    externalManagerConfigAvailable: false,
     reason: '',
   };
 }
 
-export function resolvePanelFeatureAvailability(
-  input: ResolvePanelFeatureAvailabilityInput
-): PanelFeatureAvailability {
-  if (!input.managementKey) {
-    return buildUnavailableState(input, 'service_not_configured');
-  }
-  if (!input.panelHostedByUsageService) {
-    return buildUnavailableState(input, 'service_not_configured');
-  }
-
-  const managerServiceBase = normalizeBase(input.managerServiceBase);
-  if (!managerServiceBase || !input.managerConfig) {
-    return buildUnavailableState(
-      input,
-      input.hasManagerCandidate ? 'service_unavailable' : 'service_not_configured'
-    );
-  }
-
-  const hasCPAConnection = Boolean(
-    input.managerConfig.cpaConnection?.cpaBaseUrl &&
-      input.managerConfig.cpaConnection?.managementKey
-  );
-  const collectorEnabled = input.managerConfig.collector?.enabled !== false;
-  const requestMonitoringAvailable = hasCPAConnection && collectorEnabled;
-
-  return {
-    checking: input.checking === true,
-    panelHostMode: input.panelHostedByUsageService ? 'manager_embedded' : 'external_panel',
-    panelBase: normalizeBase(input.panelBase),
-    managerServiceBase,
-    managerServiceAvailable: true,
-    requestMonitoringAvailable,
-    modelPricesAvailable: true,
-    serverCodexInspectionAvailable: true,
-    dockerSetupAvailable: input.panelHostedByUsageService,
-    externalManagerConfigAvailable: false,
-    reason: requestMonitoringAvailable
-      ? ''
-      : !hasCPAConnection
-        ? 'service_not_configured'
-        : 'monitoring_disabled',
-  };
-}
-
-export interface BuildPanelManagerServiceCandidatesInput {
-  panelHostedByUsageService: boolean;
-  panelBase: string;
-}
-
-export function buildPanelManagerServiceCandidates({
-  panelHostedByUsageService,
+export function buildUnavailableAvailability({
+  apiBase,
   panelBase,
-}: BuildPanelManagerServiceCandidatesInput): string[] {
-  const normalizedPanelBase = normalizeBase(panelBase);
-  if (panelHostedByUsageService) {
-    return normalizedPanelBase ? [normalizedPanelBase] : [];
-  }
-
-  return [];
-}
-
-export function managerConfigMatchesPanel({
-  panelHostedByUsageService,
+  checking = false,
+  reason,
 }: {
-  panelHostedByUsageService: boolean;
   apiBase: string;
-  config: ManagerConfig;
-}): boolean {
-  return panelHostedByUsageService;
+  panelBase: string;
+  checking?: boolean;
+  reason: PanelFeatureUnavailableReason;
+}): PanelFeatureAvailability {
+  return {
+    checking,
+    panelBase: normalizeApiBase(panelBase),
+    serviceBase: normalizeApiBase(apiBase),
+    serviceAvailable: false,
+    requestMonitoringAvailable: false,
+    modelPricesAvailable: false,
+    reason,
+  };
 }
 
 type PanelFeatureAvailabilityRequestInput = {
   apiBase: string;
   managementKey: string;
-  usageServiceRevision: number;
   panelBase: string;
 };
 
@@ -168,15 +75,11 @@ type PanelFeatureAvailabilityRequest = {
 
 const initialAvailability: PanelFeatureAvailability = {
   checking: true,
-  panelHostMode: 'external_panel',
   panelBase: '',
-  managerServiceBase: '',
-  managerServiceAvailable: false,
+  serviceBase: '',
+  serviceAvailable: false,
   requestMonitoringAvailable: false,
   modelPricesAvailable: false,
-  serverCodexInspectionAvailable: false,
-  dockerSetupAvailable: false,
-  externalManagerConfigAvailable: false,
   reason: 'checking',
 };
 
@@ -188,98 +91,38 @@ let latestAvailabilityRequestKey = '';
 const buildAvailabilityRequestKey = ({
   apiBase,
   managementKey,
-  usageServiceRevision,
   panelBase,
 }: PanelFeatureAvailabilityRequestInput): string =>
-  [
-    normalizeBase(panelBase),
-    normalizeBase(apiBase),
-    managementKey,
-    String(usageServiceRevision),
-  ].join('\u001f');
+  [normalizeApiBase(panelBase), normalizeApiBase(apiBase), managementKey].join('\u001f');
 
 async function detectPanelFeatureAvailability({
   apiBase,
   managementKey,
   panelBase,
 }: PanelFeatureAvailabilityRequestInput): Promise<PanelFeatureAvailability> {
-  const normalizedPanelBase = normalizeBase(panelBase);
-  if (!managementKey) {
-    return resolvePanelFeatureAvailability({
-      checking: false,
-      panelHostedByUsageService: false,
+  const normalizedApiBase = normalizeApiBase(apiBase);
+  const normalizedPanelBase = normalizeApiBase(panelBase);
+  if (!managementKey || !normalizedApiBase) {
+    return buildUnavailableAvailability({
+      apiBase: normalizedApiBase,
       panelBase: normalizedPanelBase,
-      managerServiceBase: '',
-      managerConfig: null,
-      hasManagerCandidate: false,
-      managementKey,
+      reason: 'service_not_configured',
     });
   }
 
-  let panelHostedByUsageService = false;
   try {
-    const info = await usageServiceApi.getInfo(normalizedPanelBase);
-    panelHostedByUsageService = isUsageServiceId(info.service);
+    await usageServiceApi.getUsage(normalizedApiBase, managementKey);
+    return buildNativeRequestMonitoringAvailability({
+      apiBase: normalizedApiBase,
+      panelBase: normalizedPanelBase,
+    });
   } catch {
-    panelHostedByUsageService = false;
+    return buildUnavailableAvailability({
+      apiBase: normalizedApiBase,
+      panelBase: normalizedPanelBase,
+      reason: 'service_unavailable',
+    });
   }
-
-  const candidates = buildPanelManagerServiceCandidates({
-    panelHostedByUsageService,
-    panelBase: normalizedPanelBase,
-  });
-
-  for (const candidate of candidates) {
-    try {
-      const info = await usageServiceApi.getInfo(candidate);
-      if (!isUsageServiceId(info.service)) continue;
-      const response = await usageServiceApi.getManagerConfig(candidate, managementKey);
-      if (
-        !managerConfigMatchesPanel({
-          panelHostedByUsageService,
-          apiBase,
-          config: response.config,
-        })
-      ) {
-        continue;
-      }
-      return resolvePanelFeatureAvailability({
-        checking: false,
-        panelHostedByUsageService,
-        panelBase: normalizedPanelBase,
-        managerServiceBase: candidate,
-        managerConfig: response.config,
-        hasManagerCandidate: candidates.length > 0,
-        managementKey,
-      });
-    } catch {
-      // Continue probing; a regular CPA endpoint or unreachable Manager Server is expected here.
-    }
-  }
-
-  const normalizedApiBase = normalizeBase(apiBase);
-  if (normalizedApiBase) {
-    try {
-      await usageServiceApi.getUsage(normalizedApiBase, managementKey);
-      return buildNativeRequestMonitoringAvailability({
-        apiBase: normalizedApiBase,
-        panelBase: normalizedPanelBase,
-      });
-    } catch {
-      // Native CPA usage statistics are optional; keep the regular unavailable state below.
-    }
-  }
-
-  const unavailableState = resolvePanelFeatureAvailability({
-    checking: false,
-    panelHostedByUsageService,
-    panelBase: normalizedPanelBase,
-    managerServiceBase: '',
-    managerConfig: null,
-    hasManagerCandidate: candidates.length > 0,
-    managementKey,
-  });
-  return unavailableState;
 }
 
 function requestPanelFeatureAvailability(
@@ -318,15 +161,11 @@ export function usePanelFeatureAvailability(): PanelFeatureAvailability {
     () => ({
       apiBase,
       managementKey,
-      usageServiceRevision: 0,
       panelBase,
     }),
     [apiBase, managementKey, panelBase]
   );
-  const requestKey = useMemo(
-    () => buildAvailabilityRequestKey(requestInput),
-    [requestInput]
-  );
+  const requestKey = useMemo(() => buildAvailabilityRequestKey(requestInput), [requestInput]);
   const [state, setState] = useState<PanelFeatureAvailability>(() =>
     cachedAvailabilityKey === requestKey && cachedAvailability
       ? cachedAvailability
@@ -342,7 +181,8 @@ export function usePanelFeatureAvailability(): PanelFeatureAvailability {
         setState((current) => ({
           ...current,
           checking: true,
-          panelBase: normalizeBase(panelBase),
+          panelBase: normalizeApiBase(panelBase),
+          serviceBase: normalizeApiBase(apiBase),
           reason: 'checking',
         }));
       });
@@ -357,11 +197,7 @@ export function usePanelFeatureAvailability(): PanelFeatureAvailability {
     return () => {
       cancelled = true;
     };
-  }, [
-    panelBase,
-    requestInput,
-    requestKey,
-  ]);
+  }, [apiBase, panelBase, requestInput, requestKey]);
 
   return state;
 }

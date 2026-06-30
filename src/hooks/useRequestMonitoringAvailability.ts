@@ -9,7 +9,7 @@ export type RequestMonitoringUnavailableReason =
 export interface RequestMonitoringAvailability {
   checking: boolean;
   available: boolean;
-  managerServiceAvailable: boolean;
+  serviceAvailable: boolean;
   modelPricesAvailable: boolean;
   serviceBase: string;
   reason: RequestMonitoringUnavailableReason | '';
@@ -20,9 +20,9 @@ export function useRequestMonitoringAvailability(): RequestMonitoringAvailabilit
   return {
     checking: availability.checking,
     available: availability.requestMonitoringAvailable,
-    managerServiceAvailable: availability.managerServiceAvailable,
+    serviceAvailable: availability.serviceAvailable,
     modelPricesAvailable: availability.modelPricesAvailable,
-    serviceBase: availability.managerServiceBase,
+    serviceBase: availability.serviceBase,
     reason: availability.reason,
   };
 }

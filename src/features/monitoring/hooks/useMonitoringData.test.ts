@@ -8,8 +8,6 @@ import {
   buildMonitoringSummary,
   buildRangeFilteredRows,
   buildScopeFilteredRows,
-  mergeMonitoringEventsPageItems,
-  resolveMonitoringDisplayEventItems,
   resolveMonitoringPresentationSnapshot,
   type MonitoringEventRow,
   type MonitoringPresentationSnapshot,
@@ -18,7 +16,6 @@ import {
   buildAccountRowsFromAnalytics,
   buildApiKeyRowsFromAnalytics,
 } from '../model/analyticsAdapters';
-import type { MonitoringAnalyticsEventRow } from '@/services/api/usageService';
 import { buildSourceInfoMap } from '@/utils/sourceResolver';
 import { sha256Hex } from '@/utils/apiKeyHash';
 import type { AuthFileItem } from '@/types';
@@ -93,10 +90,7 @@ const createPresentationSnapshot = (id: string): MonitoringPresentationSnapshot 
       channels: [row.channel],
     },
     filteredRows: [row],
-    eventsHasMore: id.includes('more'),
-    eventsLoadingMore: false,
     eventsTotalCount: 1,
-    eventsLoadedCount: 1,
     lastRefreshedAt: new Date(1_768_759_000_000),
   };
 };
@@ -470,158 +464,6 @@ describe('buildMonitoringEventsScopeKey', () => {
     );
 
     expect(second).not.toBe(first);
-  });
-});
-
-describe('mergeMonitoringEventsPageItems', () => {
-  const createAnalyticsEvent = (
-    eventHash: string,
-    timestampMs: number
-  ): MonitoringAnalyticsEventRow => ({
-    event_hash: eventHash,
-    timestamp_ms: timestampMs,
-    model: 'gpt-4.1',
-    endpoint: 'POST /v1/chat/completions',
-    method: 'POST',
-    path: '/v1/chat/completions',
-    auth_index: 'auth-1',
-    source: 'source-1',
-    source_hash: 'source-hash-1',
-    api_key_hash: 'api-key-hash-1',
-    account_snapshot: 'alice@example.com',
-    auth_label_snapshot: 'alice.json',
-    auth_provider_snapshot: 'codex',
-    input_tokens: 10,
-    output_tokens: 5,
-    cached_tokens: 0,
-    cache_read_tokens: 0,
-    cache_creation_tokens: 0,
-    reasoning_tokens: 0,
-    total_tokens: 15,
-    latency_ms: 1200,
-    ttft_ms: 200,
-    failed: false,
-  });
-
-  it('replaces root refresh results instead of accumulating stale pages', () => {
-    const previous = [
-      createAnalyticsEvent('event-2', 1_768_759_001_000),
-      createAnalyticsEvent('event-1', 1_768_759_000_000),
-    ];
-    const nextPage = [
-      createAnalyticsEvent('event-3', 1_768_759_002_000),
-      createAnalyticsEvent('event-2', 1_768_759_001_000),
-    ];
-
-    expect(
-      mergeMonitoringEventsPageItems(previous, nextPage, null).map((item) => item.event_hash)
-    ).toEqual(['event-3', 'event-2']);
-  });
-
-  it('appends later pages after the root page', () => {
-    const previous = [
-      createAnalyticsEvent('event-3', 1_768_759_002_000),
-      createAnalyticsEvent('event-2', 1_768_759_001_000),
-    ];
-    const nextPage = [
-      createAnalyticsEvent('event-1', 1_768_759_000_000),
-      createAnalyticsEvent('event-0', 1_768_758_999_000),
-    ];
-
-    expect(
-      mergeMonitoringEventsPageItems(previous, nextPage, 1_768_759_001_000).map(
-        (item) => item.event_hash
-      )
-    ).toEqual(['event-3', 'event-2', 'event-1', 'event-0']);
-  });
-});
-
-describe('resolveMonitoringDisplayEventItems', () => {
-  const createAnalyticsEvent = (
-    eventHash: string,
-    timestampMs: number
-  ): MonitoringAnalyticsEventRow => ({
-    event_hash: eventHash,
-    timestamp_ms: timestampMs,
-    model: 'gpt-4.1',
-    endpoint: 'POST /v1/chat/completions',
-    method: 'POST',
-    path: '/v1/chat/completions',
-    auth_index: 'auth-1',
-    source: 'source-1',
-    source_hash: 'source-hash-1',
-    api_key_hash: 'api-key-hash-1',
-    account_snapshot: 'alice@example.com',
-    auth_label_snapshot: 'alice.json',
-    auth_provider_snapshot: 'codex',
-    input_tokens: 10,
-    output_tokens: 5,
-    cached_tokens: 0,
-    cache_read_tokens: 0,
-    cache_creation_tokens: 0,
-    reasoning_tokens: 0,
-    total_tokens: 15,
-    latency_ms: 1200,
-    ttft_ms: 200,
-    failed: false,
-  });
-
-  it('reuses persisted page items while the analytics response has no new event page', () => {
-    const eventsPageItems = [createAnalyticsEvent('event-1', 1_768_759_000_000)];
-
-    const first = resolveMonitoringDisplayEventItems({
-      analyticsData: null,
-      currentPageItems: null,
-      eventsPageItems,
-      eventsBeforeMs: null,
-      dataStale: false,
-    });
-    const second = resolveMonitoringDisplayEventItems({
-      analyticsData: null,
-      currentPageItems: null,
-      eventsPageItems,
-      eventsBeforeMs: null,
-      dataStale: false,
-    });
-
-    expect(first).toBe(eventsPageItems);
-    expect(second).toBe(eventsPageItems);
-  });
-
-  it('keeps stale transitions on existing page items without creating a new array', () => {
-    const eventsPageItems = [createAnalyticsEvent('event-1', 1_768_759_000_000)];
-    const analyticsItems = [createAnalyticsEvent('event-2', 1_768_759_001_000)];
-
-    expect(
-      resolveMonitoringDisplayEventItems({
-        analyticsData: { events: { items: analyticsItems } },
-        currentPageItems: analyticsItems,
-        eventsPageItems,
-        eventsBeforeMs: null,
-        dataStale: true,
-      })
-    ).toBe(eventsPageItems);
-  });
-
-  it('reuses persisted page items after the same analytics page has been absorbed', () => {
-    const analyticsItems = [
-      createAnalyticsEvent('event-2', 1_768_759_001_000),
-      createAnalyticsEvent('event-1', 1_768_759_000_000),
-    ];
-    const eventsPageItems = [
-      createAnalyticsEvent('event-2', 1_768_759_001_000),
-      createAnalyticsEvent('event-1', 1_768_759_000_000),
-    ];
-
-    expect(
-      resolveMonitoringDisplayEventItems({
-        analyticsData: { events: { items: analyticsItems } },
-        currentPageItems: analyticsItems,
-        eventsPageItems,
-        eventsBeforeMs: null,
-        dataStale: false,
-      })
-    ).toBe(eventsPageItems);
   });
 });
 
