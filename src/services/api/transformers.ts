@@ -153,6 +153,8 @@ const normalizeProviderKeyConfig = (item: unknown): ProviderKeyConfig | null => 
   if (!trimmed && !authIndex) return null;
 
   const config: ProviderKeyConfig = { apiKey: trimmed };
+  const name = record?.name ?? record?.['name'];
+  if (typeof name === 'string' && name.trim()) config.name = name.trim();
   const priority = record?.priority ?? record?.['priority'];
   if (priority !== undefined && priority !== null && String(priority).trim() !== '') {
     const parsed = Number(priority);
@@ -280,6 +282,9 @@ const normalizeOpenAIProvider = (provider: unknown): OpenAIProviderConfig | null
   const models = normalizeModelAliases(provider.models);
   const priority = provider.priority ?? provider['priority'];
   const testModel = provider['test-model'] ?? provider.testModel;
+  const chatCompletionsOnly = normalizeBoolean(
+    provider['chat-completions-only'] ?? provider.chatCompletionsOnly ?? provider['chat_completions_only']
+  );
 
   const result: OpenAIProviderConfig = {
     name: String(name),
@@ -292,6 +297,7 @@ const normalizeOpenAIProvider = (provider: unknown): OpenAIProviderConfig | null
   const prefix = normalizePrefix(provider.prefix ?? provider['prefix']);
   if (prefix) result.prefix = prefix;
   if (headers) result.headers = headers;
+  if (chatCompletionsOnly !== undefined) result.chatCompletionsOnly = chatCompletionsOnly;
   if (models.length) result.models = models;
   if (priority !== undefined) result.priority = Number(priority);
   if (testModel) result.testModel = String(testModel);

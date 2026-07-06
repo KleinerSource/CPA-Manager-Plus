@@ -29,6 +29,7 @@ import styles from './AiProvidersPage.module.scss';
 type LocationState = { fromAiProviders?: boolean } | null;
 
 const buildEmptyForm = (): ProviderFormState => ({
+  name: '',
   apiKey: '',
   priority: undefined,
   prefix: '',
@@ -61,6 +62,7 @@ const normalizeModelEntries = (entries: Array<{ name: string; alias: string }>) 
   }, []);
 
 type CodexFormBaseline = {
+  name: string;
   apiKey: string;
   authIndex: string;
   priority: number | null;
@@ -74,6 +76,7 @@ type CodexFormBaseline = {
 };
 
 const buildCodexBaseline = (form: ProviderFormState): CodexFormBaseline => ({
+  name: String(form.name ?? '').trim(),
   apiKey: String(form.apiKey ?? '').trim(),
   authIndex: normalizeAuthIndex(form.authIndex) ?? '',
   priority:
@@ -227,6 +230,7 @@ export function AiProvidersCodexEditPage() {
     [baseline.excludedModels, normalizedExcludedModels]
   );
   const isDirty =
+    baseline.name !== String(form.name ?? '').trim() ||
     baseline.apiKey !== form.apiKey.trim() ||
     baseline.authIndex !== (normalizeAuthIndex(form.authIndex) ?? '') ||
     baseline.priority !== normalizedPriority ||
@@ -447,6 +451,7 @@ export function AiProvidersCodexEditPage() {
     setError('');
     try {
       const payload: ProviderKeyConfig = {
+        name: form.name?.trim() || undefined,
         apiKey: form.apiKey.trim(),
         priority: form.priority !== undefined ? Math.trunc(form.priority) : undefined,
         prefix: form.prefix?.trim() || undefined,
@@ -546,6 +551,12 @@ export function AiProvidersCodexEditPage() {
           <div className="hint">{t('common.invalid_provider_index')}</div>
         ) : (
           <>
+            <Input
+              label={t('ai_providers.codex_add_modal_name_label')}
+              value={form.name ?? ''}
+              onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+              disabled={disableControls || saving}
+            />
             <Input
               label={t('ai_providers.codex_add_modal_key_label')}
               value={form.apiKey}

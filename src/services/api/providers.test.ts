@@ -55,6 +55,27 @@ describe('providersApi auth-index preservation', () => {
     ]);
   });
 
+  it('serializes Codex provider names', async () => {
+    mocks.get.mockResolvedValue({ 'codex-api-key': [] });
+    mocks.put.mockResolvedValue({});
+
+    await providersApi.saveCodexConfigs([
+      {
+        name: 'Codex Team A',
+        apiKey: 'sk-codex',
+        baseUrl: 'https://codex.example.com/v1',
+      },
+    ]);
+
+    expect(mocks.put).toHaveBeenCalledWith('/codex-api-key', [
+      {
+        name: 'Codex Team A',
+        'api-key': 'sk-codex',
+        'base-url': 'https://codex.example.com/v1',
+      },
+    ]);
+  });
+
   it('serializes OpenAI auth-index entries and preserves raw provider fields', async () => {
     mocks.get.mockResolvedValue({
       'openai-compatibility': [
@@ -79,6 +100,7 @@ describe('providersApi auth-index preservation', () => {
         name: 'openai-compatible',
         baseUrl: 'https://api.example.com/v1',
         apiKeyEntries: [{ apiKey: '', authIndex: 'auth-2' }],
+        chatCompletionsOnly: true,
       },
     ]);
 
@@ -87,7 +109,48 @@ describe('providersApi auth-index preservation', () => {
         'raw-provider-field': 'keep-provider',
         name: 'openai-compatible',
         'base-url': 'https://api.example.com/v1',
+        'chat-completions-only': true,
         'api-key-entries': [{ 'raw-entry-field': 'keep-entry', 'auth-index': 'auth-2' }],
+      },
+    ]);
+  });
+
+  it('normalizes OpenAI chat-completions-only option', async () => {
+    mocks.get.mockResolvedValue({
+      'openai-compatibility': [
+        {
+          name: 'openai-compatible',
+          'base-url': 'https://api.example.com/v1',
+          'chat-completions-only': true,
+          'api-key-entries': [],
+        },
+      ],
+    });
+
+    const providers = await providersApi.getOpenAIProviders();
+
+    expect(providers[0]?.chatCompletionsOnly).toBe(true);
+  });
+
+  it('serializes OpenAI chat-completions-only false explicitly', async () => {
+    mocks.get.mockResolvedValue({ 'openai-compatibility': [] });
+    mocks.put.mockResolvedValue({});
+
+    await providersApi.saveOpenAIProviders([
+      {
+        name: 'openai-compatible',
+        baseUrl: 'https://api.example.com/v1',
+        apiKeyEntries: [],
+        chatCompletionsOnly: false,
+      },
+    ]);
+
+    expect(mocks.put).toHaveBeenCalledWith('/openai-compatibility', [
+      {
+        name: 'openai-compatible',
+        'base-url': 'https://api.example.com/v1',
+        'api-key-entries': [],
+        'chat-completions-only': false,
       },
     ]);
   });
@@ -107,6 +170,7 @@ describe('providersApi auth-index preservation', () => {
 
     await providersApi.saveClaudeConfigs([
       {
+        name: 'Claude Team A',
         apiKey: 'sk-claude',
         experimentalCCHSigning: false,
         cloak: {
@@ -119,6 +183,7 @@ describe('providersApi auth-index preservation', () => {
 
     expect(mocks.put).toHaveBeenCalledWith('/claude-api-key', [
       {
+        name: 'Claude Team A',
         'api-key': 'sk-claude',
         'experimental-cch-signing': false,
         cloak: {
@@ -134,6 +199,7 @@ describe('providersApi auth-index preservation', () => {
     mocks.get.mockResolvedValue({
       'claude-api-key': [
         {
+          name: 'Claude Team A',
           'api-key': 'sk-claude',
           'experimental-cch-signing': true,
           cloak: {
@@ -146,6 +212,7 @@ describe('providersApi auth-index preservation', () => {
 
     await expect(providersApi.getClaudeConfigs()).resolves.toEqual([
       {
+        name: 'Claude Team A',
         apiKey: 'sk-claude',
         experimentalCCHSigning: true,
         cloak: {

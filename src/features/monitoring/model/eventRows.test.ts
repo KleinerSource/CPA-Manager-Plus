@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { UsageDetailWithEndpoint } from '@/utils/usage';
+import { buildSourceInfoMap } from '@/utils/sourceResolver';
 import { buildEventRows } from './eventRows';
 
 const buildRows = (overrides: Partial<UsageDetailWithEndpoint> = {}) =>
@@ -74,5 +75,56 @@ describe('buildEventRows', () => {
     expect(row.searchText).toContain('codex');
     expect(row.searchText).toContain('priority');
     expect(row.searchText).toContain('medium');
+  });
+
+  it('prefers configured provider names over auth file labels', () => {
+    const [row] = buildEventRows(
+      [
+        {
+          timestamp: '2026-05-19T10:00:00Z',
+          source: 'm:sk-c...7890',
+          auth_index: 'auth-1',
+          tokens: { total_tokens: 0 },
+          failed: false,
+          __modelName: 'gpt-5.4',
+          __endpoint: 'POST /v1/chat/completions',
+          __timestampMs: Date.parse('2026-05-19T10:00:00Z'),
+        },
+      ],
+      new Map([
+        [
+          'auth-1',
+          {
+            authIndex: 'auth-1',
+            label: 'alice@example.com',
+            account: 'alice@example.com',
+            provider: 'codex',
+            status: 'available',
+            disabled: false,
+            unavailable: false,
+            runtimeOnly: false,
+            planType: '-',
+            updatedAt: '',
+          },
+        ],
+      ]),
+      new Map(),
+      buildSourceInfoMap({
+        codexApiKeys: [
+          {
+            name: 'Codex Team A',
+            apiKey: 'sk-codex1234567890',
+            baseUrl: 'https://api.codex.example/v1',
+            authIndex: 'auth-1',
+          },
+        ],
+      }),
+      new Map(),
+      {},
+      new Map()
+    );
+
+    expect(row.source).toBe('Codex Team A');
+    expect(row.sourceMasked).toBe('Codex Team A');
   });
 });

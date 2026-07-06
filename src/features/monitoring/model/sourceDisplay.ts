@@ -24,6 +24,9 @@ export const isGenericMonitoringProviderLabel = (value: string) =>
 const firstReadable = (...values: Array<string | null | undefined>) =>
   values.find(hasReadableValue)?.trim() || '';
 
+export const isConfiguredProviderSource = (identityKey: string | undefined) =>
+  Boolean(identityKey && !identityKey.startsWith('auth:') && !identityKey.startsWith('source:'));
+
 export type MonitoringSourceDisplayInput = {
   source?: string | null;
   sourceHash?: string | null;
@@ -110,6 +113,9 @@ export const buildMonitoringSourceDisplay = (
   const explicitChannel = readString(input.channel);
   const explicitLabel = readString(input.authLabel);
   const explicitAccount = readString(input.account);
+  const configuredSourceName = isConfiguredProviderSource(sourceMeta.identityKey)
+    ? sourceMeta.displayName
+    : '';
 
   const account = firstReadable(
     authMeta?.account,
@@ -119,6 +125,7 @@ export const buildMonitoringSourceDisplay = (
     snapshotLabel
   );
   const sourceLabel = firstReadable(
+    configuredSourceName,
     authMeta?.label,
     explicitLabel,
     snapshotLabel,
@@ -134,6 +141,7 @@ export const buildMonitoringSourceDisplay = (
   const primary =
     firstReadable(
       channel && !isGenericMonitoringProviderLabel(channel) ? channel : '',
+      configuredSourceName,
       channelHost,
       sourceMasked,
       provider && !isGenericMonitoringProviderLabel(provider) ? provider : '',

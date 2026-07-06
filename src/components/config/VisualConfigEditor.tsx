@@ -967,6 +967,12 @@ export function VisualConfigEditor({
                   onChange={(codexForceSuperCategory) => onChange({ codexForceSuperCategory })}
                 />
                 <ToggleRow
+                  title={t('config_management.visual.sections.network.codex_bug_mode')}
+                  checked={values.codexBugMode}
+                  disabled={disabled}
+                  onChange={(codexBugMode) => onChange({ codexBugMode })}
+                />
+                <ToggleRow
                   title={t('config_management.visual.sections.network.passthrough_headers')}
                   description={t(
                     'config_management.visual.sections.network.passthrough_headers_desc'
@@ -1008,6 +1014,15 @@ export function VisualConfigEditor({
                   checked={values.disableCooling}
                   disabled={disabled}
                   onChange={(disableCooling) => onChange({ disableCooling })}
+                />
+                <ToggleRow
+                  title={t('config_management.visual.sections.network.disable_auto_disable')}
+                  description={t(
+                    'config_management.visual.sections.network.disable_auto_disable_desc'
+                  )}
+                  checked={values.disableAutoDisable}
+                  disabled={disabled}
+                  onChange={(disableAutoDisable) => onChange({ disableAutoDisable })}
                 />
                 <ToggleRow
                   title={t('config_management.visual.sections.network.session_affinity')}
@@ -1184,6 +1199,16 @@ export function VisualConfigEditor({
                   onChange={(e) => onChange({ augmentImageFallbackModel: e.target.value })}
                   disabled={disabled}
                   hint={t('config_management.visual.sections.augment.image_fallback_model_hint')}
+                />
+                <Input
+                  label={t('config_management.visual.sections.augment.codebase_retrieval_model')}
+                  placeholder="gpt-5.5"
+                  value={values.augmentCodebaseRetrievalModel}
+                  onChange={(e) => onChange({ augmentCodebaseRetrievalModel: e.target.value })}
+                  disabled={disabled}
+                  hint={t(
+                    'config_management.visual.sections.augment.codebase_retrieval_model_hint'
+                  )}
                 />
               </SectionGrid>
               <ToggleRow

@@ -49,6 +49,7 @@ const buildEmptyForm = (): OpenAIFormState => ({
   prefix: '',
   baseUrl: '',
   headers: [],
+  chatCompletionsOnly: false,
   apiKeyEntries: [buildApiKeyEntry()],
   modelEntries: [{ name: '', alias: '' }],
   testModel: undefined,
@@ -108,6 +109,7 @@ const buildOpenAIBaseline = (form: OpenAIFormState, testModel: string): OpenAIEd
     form.priority !== undefined && Number.isFinite(form.priority) ? Math.trunc(form.priority) : null,
   prefix: String(form.prefix ?? '').trim(),
   baseUrl: String(form.baseUrl ?? '').trim(),
+  chatCompletionsOnly: Boolean(form.chatCompletionsOnly),
   headers: normalizeHeaderEntries(form.headers),
   apiKeyEntries: normalizeApiKeyEntries(form.apiKeyEntries),
   models: normalizeModelEntries(form.modelEntries),
@@ -153,14 +155,11 @@ export function AiProvidersOpenAIEditLayout() {
   const config = useConfigStore((state) => state.config);
   const fetchConfig = useConfigStore((state) => state.fetchConfig);
   const updateConfigValue = useConfigStore((state) => state.updateConfigValue);
-  const isCacheValid = useConfigStore((state) => state.isCacheValid);
 
   const [providers, setProviders] = useState<OpenAIProviderConfig[]>(
     () => config?.openaiCompatibility ?? []
   );
-  const [loading, setLoading] = useState(
-    () => !isCacheValid('openai-compatibility')
-  );
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const draftKey = useMemo(() => {
@@ -256,10 +255,7 @@ export function AiProvidersOpenAIEditLayout() {
 
   useEffect(() => {
     let cancelled = false;
-    const hasValidCache = isCacheValid('openai-compatibility');
-    if (!hasValidCache) {
-      setLoading(true);
-    }
+    setLoading(true);
 
     providersApi
       .getOpenAIProviders()
@@ -289,7 +285,7 @@ export function AiProvidersOpenAIEditLayout() {
     return () => {
       cancelled = true;
     };
-  }, [fetchConfig, isCacheValid, showNotification, t, updateConfigValue]);
+  }, [fetchConfig, showNotification, t, updateConfigValue]);
 
   useEffect(() => {
     if (loading) return;
@@ -303,6 +299,7 @@ export function AiProvidersOpenAIEditLayout() {
         prefix: initialData.prefix ?? '',
         baseUrl: initialData.baseUrl,
         headers: headersToEntries(initialData.headers),
+        chatCompletionsOnly: Boolean(initialData.chatCompletionsOnly),
         testModel: initialData.testModel,
         modelEntries,
         apiKeyEntries: initialData.apiKeyEntries?.length
@@ -426,6 +423,7 @@ export function AiProvidersOpenAIEditLayout() {
       baseline.priority !== normalizedPriority ||
       baseline.prefix !== form.prefix.trim() ||
       baseline.baseUrl !== form.baseUrl.trim() ||
+      baseline.chatCompletionsOnly !== Boolean(form.chatCompletionsOnly) ||
       baseline.testModel !== normalizedTestModel ||
       isHeadersDirty ||
       isApiKeyEntriesDirty ||
@@ -481,6 +479,7 @@ export function AiProvidersOpenAIEditLayout() {
       if (form.priority !== undefined && Number.isFinite(form.priority)) {
         payload.priority = Math.trunc(form.priority);
       }
+      payload.chatCompletionsOnly = Boolean(form.chatCompletionsOnly);
       if (initialData?.disabled !== undefined) {
         payload.disabled = initialData.disabled;
       }

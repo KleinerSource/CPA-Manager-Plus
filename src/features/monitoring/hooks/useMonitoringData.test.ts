@@ -183,6 +183,55 @@ describe('analytics aggregate row adapters', () => {
     expect(rows[0].models[0]).toMatchObject({ model: 'gpt-4.1', totalCalls: 3 });
   });
 
+  it('uses configured provider names for aggregate account display', () => {
+    const rows = buildAccountRowsFromAnalytics(
+      [
+        {
+          id: 'team@example.com',
+          account_snapshot: 'team@example.com',
+          auth_label_snapshot: 'Team Account',
+          auth_provider_snapshot: 'codex',
+          auth_indices: ['auth-123456'],
+          sources: ['m:sk-c...7890'],
+          source_hashes: ['source-hash'],
+          calls: 3,
+          success_calls: 3,
+          failure_calls: 0,
+          success_rate: 1,
+          input_tokens: 31,
+          output_tokens: 12,
+          cached_tokens: 0,
+          cache_read_tokens: 0,
+          cache_creation_tokens: 0,
+          total_tokens: 43,
+          cost: 0.42,
+          average_latency_ms: 1200,
+          last_seen_ms: 1_768_759_000_000,
+          models: [],
+        },
+      ],
+      authMetaMap,
+      authFileMap,
+      buildSourceInfoMap({
+        codexApiKeys: [
+          {
+            name: 'Codex Team A',
+            apiKey: 'sk-codex1234567890',
+            baseUrl: 'https://api.codex.example/v1',
+            authIndex: 'auth-123456',
+          },
+        ],
+      }),
+      channelByAuthIndex
+    );
+
+    expect(rows[0]).toMatchObject({
+      account: 'team@example.com',
+      displayAccount: 'Codex Team A',
+      accountMasked: 'tea***@example.com',
+    });
+  });
+
   it('builds api key rows from full backend aggregates and keeps aliases', () => {
     const rows = buildApiKeyRowsFromAnalytics(
       [

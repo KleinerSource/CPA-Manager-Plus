@@ -25,6 +25,7 @@ export type OpenAIEditBaseline = {
   priority: number | null;
   prefix: string;
   baseUrl: string;
+  chatCompletionsOnly: boolean;
   headers: Array<{ key: string; value: string }>;
   apiKeyEntries: Array<{
     apiKey: string;
@@ -71,6 +72,7 @@ const buildEmptyForm = (): OpenAIFormState => ({
   prefix: '',
   baseUrl: '',
   headers: [],
+  chatCompletionsOnly: false,
   apiKeyEntries: [buildApiKeyEntry()],
   modelEntries: [{ name: '', alias: '' }],
   testModel: undefined,

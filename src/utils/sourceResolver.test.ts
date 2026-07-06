@@ -60,6 +60,40 @@ describe('source resolver', () => {
     expect(resolved.type).toBe('openai');
   });
 
+  it('uses explicit provider names before base URL fallbacks for Codex providers', () => {
+    const sourceInfoMap = buildSourceInfoMap({
+      codexApiKeys: [
+        {
+          name: 'Codex Team A',
+          apiKey: 'sk-codex1234567890',
+          baseUrl: 'https://api.codex.example/v1',
+        },
+      ],
+    });
+
+    const resolved = resolveSourceDisplay('m:sk-c...7890', '', sourceInfoMap, new Map());
+
+    expect(resolved.displayName).toBe('Codex Team A');
+    expect(resolved.type).toBe('codex');
+  });
+
+  it('uses explicit provider names before base URL fallbacks for Claude providers', () => {
+    const sourceInfoMap = buildSourceInfoMap({
+      claudeApiKeys: [
+        {
+          name: 'Claude Team A',
+          apiKey: 'sk-claude1234567890',
+          baseUrl: 'https://api.anthropic.example',
+        },
+      ],
+    });
+
+    const resolved = resolveSourceDisplay('m:sk-c...7890', '', sourceInfoMap, new Map());
+
+    expect(resolved.displayName).toBe('Claude Team A');
+    expect(resolved.type).toBe('claude');
+  });
+
   it('distinguishes OpenAI compatible providers that share the same base URL', () => {
     const sourceInfoMap = buildSourceInfoMap({
       openaiCompatibility: [

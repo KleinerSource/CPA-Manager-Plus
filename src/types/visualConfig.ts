@@ -114,6 +114,7 @@ export type VisualConfigValues = {
   proxyUrl: string;
   forceModelPrefix: boolean;
   codexForceSuperCategory: boolean;
+  codexBugMode: boolean;
   passthroughHeaders: boolean;
   hideUpstreamErrorDetails: boolean;
   disableClaudeCloakMode: boolean;
@@ -122,6 +123,7 @@ export type VisualConfigValues = {
   maxRetryCredentials: string;
   maxRetryInterval: string;
   disableCooling: boolean;
+  disableAutoDisable: boolean;
   disableImageGeneration: DisableImageGenerationMode;
   authAutoRefreshWorkers: string;
   quotaSwitchProject: boolean;
@@ -146,6 +148,7 @@ export type VisualConfigValues = {
   codexIdentityConfuse: boolean;
   augmentSilentModeModel: string;
   augmentImageFallbackModel: string;
+  augmentCodebaseRetrievalModel: string;
   augmentShowThinkingProgress: boolean;
   kiroPerAccountRpmLimit: string;
   kiroFreeRpmLimit: string;
@@ -193,6 +196,7 @@ export const DEFAULT_VISUAL_VALUES: VisualConfigValues = {
   proxyUrl: '',
   forceModelPrefix: false,
   codexForceSuperCategory: false,
+  codexBugMode: false,
   passthroughHeaders: false,
   hideUpstreamErrorDetails: false,
   disableClaudeCloakMode: false,
@@ -201,6 +205,7 @@ export const DEFAULT_VISUAL_VALUES: VisualConfigValues = {
   maxRetryCredentials: '',
   maxRetryInterval: '',
   disableCooling: false,
+  disableAutoDisable: false,
   disableImageGeneration: 'false',
   authAutoRefreshWorkers: '',
   quotaSwitchProject: true,
@@ -225,6 +230,7 @@ export const DEFAULT_VISUAL_VALUES: VisualConfigValues = {
   codexIdentityConfuse: false,
   augmentSilentModeModel: '',
   augmentImageFallbackModel: '',
+  augmentCodebaseRetrievalModel: '',
   augmentShowThinkingProgress: false,
   kiroPerAccountRpmLimit: '20',
   kiroFreeRpmLimit: '',

@@ -12,6 +12,7 @@ import { formatApiKeyHashLabel } from './base';
 import { buildSearchText, maskAuthIndex, maskEmailLike, readString } from './base';
 import { sanitizeApiKeyDisplayText, type ApiKeyDisplayInfo } from './apiKeys';
 import { buildHourLabel, buildLocalDayKey } from './range';
+import { isConfiguredProviderSource } from './sourceDisplay';
 import type { MonitoringAuthMeta, MonitoringChannelMeta, MonitoringEventRow } from './types';
 
 const toDurationMs = (value: unknown): number | null => {
@@ -66,7 +67,15 @@ export const buildEventRows = (
         detail.auth_provider_snapshot ?? detail.authProviderSnapshot
       );
       const snapshotDisplay = snapshotAccount || snapshotLabel;
-      const sourceLabel = authMeta?.label || snapshotDisplay || sourceMeta.displayName || authIndex;
+      const configuredSourceName = isConfiguredProviderSource(sourceMeta.identityKey)
+        ? sourceMeta.displayName
+        : '';
+      const sourceLabel =
+        configuredSourceName ||
+        authMeta?.label ||
+        snapshotDisplay ||
+        sourceMeta.displayName ||
+        authIndex;
       const sourceMasked = maskEmailLike(sourceLabel);
       const account = authMeta?.account || snapshotAccount || sourceLabel;
       const accountMasked = maskEmailLike(account);

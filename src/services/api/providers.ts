@@ -24,6 +24,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const AUTH_INDEX_FIELDS = ['auth-index', 'authIndex', 'auth_index'] as const;
 
 const PROVIDER_KEY_FIELDS = [
+  'name',
   'api-key',
   'apiKey',
   ...AUTH_INDEX_FIELDS,
@@ -68,6 +69,9 @@ const OPENAI_PROVIDER_FIELDS = [
   'api_keys',
   ...AUTH_INDEX_FIELDS,
   'headers',
+  'chat-completions-only',
+  'chatCompletionsOnly',
+  'chat_completions_only',
   'models',
   'test-model',
   'testModel',
@@ -356,6 +360,7 @@ const serializeApiKeyEntry = (entry: ApiKeyEntry) => {
 
 const serializeProviderKey = (config: ProviderKeyConfig) => {
   const payload: Record<string, unknown> = {};
+  if (config.name?.trim()) payload.name = config.name.trim();
   const apiKey = config.apiKey?.trim();
   if (apiKey) payload['api-key'] = apiKey;
   const authIndex = serializeAuthIndex(config.authIndex);
@@ -459,6 +464,9 @@ const serializeOpenAIProvider = (provider: OpenAIProviderConfig) => {
   if (provider.disabled !== undefined) payload.disabled = provider.disabled;
   const headers = serializeHeaders(provider.headers);
   if (headers) payload.headers = headers;
+  if (provider.chatCompletionsOnly !== undefined) {
+    payload['chat-completions-only'] = provider.chatCompletionsOnly;
+  }
   const models = serializeModelAliases(provider.models);
   if (models && models.length) payload.models = models;
   if (provider.priority !== undefined) payload.priority = provider.priority;

@@ -93,6 +93,29 @@ describe('useVisualConfig', () => {
     harness.unmount();
   });
 
+  it('round-trips codex bug mode from visual editor', () => {
+    const harness = mountUseVisualConfig();
+    const yaml = ['host: 127.0.0.1', 'codex:', '  force-super-category: true', ''].join('\n');
+
+    act(() => {
+      const result = harness.getCurrent().loadVisualValuesFromYaml(yaml);
+      expect(result.ok).toBe(true);
+    });
+    expect(harness.getCurrent().visualValues.codexBugMode).toBe(false);
+    expect(harness.getCurrent().visualValues.codexForceSuperCategory).toBe(true);
+
+    act(() => {
+      harness.getCurrent().setVisualValues({ codexBugMode: true });
+    });
+
+    const savedYaml = harness.getCurrent().applyVisualChangesToYaml(yaml);
+    expect(savedYaml).toContain('codex:');
+    expect(savedYaml).toContain('force-super-category: true');
+    expect(savedYaml).toContain('bug-mode: true');
+
+    harness.unmount();
+  });
+
   it('round-trips global Claude cache-related toggles', () => {
     const harness = mountUseVisualConfig();
     const yaml = [
@@ -129,6 +152,7 @@ describe('useVisualConfig', () => {
       'augment:',
       '  silent-mode-model: gpt-5.5',
       '  image-fallback-model: qwen3.5-plus',
+      '  codebase-retrieval-model: claude-sonnet-4-5',
       'kiro-request-policy:',
       '  per-account-rpm-limit: 20',
       '  rpm-limits:',
@@ -149,16 +173,21 @@ describe('useVisualConfig', () => {
     });
 
     expect(harness.getCurrent().visualValues.augmentSilentModeModel).toBe('gpt-5.5');
+    expect(harness.getCurrent().visualValues.augmentCodebaseRetrievalModel).toBe(
+      'claude-sonnet-4-5'
+    );
     expect(harness.getCurrent().visualValues.kiroProRpmLimit).toBe('60');
 
     act(() => {
       harness.getCurrent().setVisualValues({
+        augmentCodebaseRetrievalModel: 'gpt-5.5',
         augmentShowThinkingProgress: true,
         kiroCooldownStrategy: 'exponential',
       });
     });
 
     const savedYaml = harness.getCurrent().applyVisualChangesToYaml(yaml);
+    expect(savedYaml).toContain('codebase-retrieval-model: gpt-5.5');
     expect(savedYaml).toContain('show-thinking-progress: true');
     expect(savedYaml).toContain('cooldown-strategy: exponential');
 

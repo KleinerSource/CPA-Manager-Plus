@@ -457,11 +457,13 @@ function getNextDirtyFields(
       'errorLogsMaxFiles',
       'pluginsEnabled',
       'codexForceSuperCategory',
+      'codexBugMode',
       'passthroughHeaders',
       'hideUpstreamErrorDetails',
       'disableClaudeCloakMode',
       'experimentalCCHSigning',
       'disableCooling',
+      'disableAutoDisable',
       'disableImageGeneration',
       'authAutoRefreshWorkers',
       'enableGeminiCliEndpoint',
@@ -479,6 +481,7 @@ function getNextDirtyFields(
       'codexIdentityConfuse',
       'augmentSilentModeModel',
       'augmentImageFallbackModel',
+      'augmentCodebaseRetrievalModel',
       'augmentShowThinkingProgress',
       'kiroPerAccountRpmLimit',
       'kiroFreeRpmLimit',
@@ -798,6 +801,7 @@ export function useVisualConfig() {
         proxyUrl: typeof parsed['proxy-url'] === 'string' ? parsed['proxy-url'] : '',
         forceModelPrefix: Boolean(parsed['force-model-prefix']),
         codexForceSuperCategory: Boolean(codex?.['force-super-category']),
+        codexBugMode: Boolean(codex?.['bug-mode'] ?? codex?.bugMode),
         passthroughHeaders: Boolean(parsed['passthrough-headers']),
         hideUpstreamErrorDetails: Boolean(
           parsed['hide-upstream-error-details'] ?? DEFAULT_VISUAL_VALUES.hideUpstreamErrorDetails
@@ -808,6 +812,7 @@ export function useVisualConfig() {
         maxRetryCredentials: String(parsed['max-retry-credentials'] ?? ''),
         maxRetryInterval: String(parsed['max-retry-interval'] ?? ''),
         disableCooling: Boolean(parsed['disable-cooling']),
+        disableAutoDisable: Boolean(parsed['disable-auto-disable']),
         disableImageGeneration: parseDisableImageGenerationMode(parsed['disable-image-generation']),
         authAutoRefreshWorkers: String(parsed['auth-auto-refresh-workers'] ?? ''),
         wsAuth: Boolean(parsed['ws-auth']),
@@ -873,6 +878,10 @@ export function useVisualConfig() {
           typeof augment?.['image-fallback-model'] === 'string'
             ? augment['image-fallback-model']
             : DEFAULT_VISUAL_VALUES.augmentImageFallbackModel,
+        augmentCodebaseRetrievalModel:
+          typeof augment?.['codebase-retrieval-model'] === 'string'
+            ? augment['codebase-retrieval-model']
+            : DEFAULT_VISUAL_VALUES.augmentCodebaseRetrievalModel,
         augmentShowThinkingProgress: Boolean(
           augment?.['show-thinking-progress'] ?? DEFAULT_VISUAL_VALUES.augmentShowThinkingProgress
         ),
@@ -1021,6 +1030,7 @@ export function useVisualConfig() {
         setIntFromStringInDoc(doc, ['max-retry-credentials'], values.maxRetryCredentials);
         setIntFromStringInDoc(doc, ['max-retry-interval'], values.maxRetryInterval);
         setBooleanInDoc(doc, ['disable-cooling'], values.disableCooling);
+        setBooleanInDoc(doc, ['disable-auto-disable'], values.disableAutoDisable);
         setDisableImageGenerationInDoc(
           doc,
           ['disable-image-generation'],
@@ -1103,7 +1113,9 @@ export function useVisualConfig() {
           docHas(doc, codexIdentityConfuseLegacyPath) ||
           values.codexIdentityConfuse ||
           values.codexForceSuperCategory ||
+          values.codexBugMode ||
           dirtyFields.has('codexForceSuperCategory') ||
+          dirtyFields.has('codexBugMode') ||
           dirtyFields.has('codexIdentityConfuse')
         ) {
           ensureMapInDoc(doc, ['codex']);
@@ -1128,6 +1140,13 @@ export function useVisualConfig() {
               ['codex', 'force-super-category'],
               values.codexForceSuperCategory
             );
+          }
+          if (
+            values.codexBugMode ||
+            dirtyFields.has('codexBugMode') ||
+            docHas(doc, ['codex', 'bug-mode'])
+          ) {
+            setBooleanInDoc(doc, ['codex', 'bug-mode'], values.codexBugMode);
           }
           deleteIfMapEmpty(doc, ['codex']);
         }
@@ -1182,6 +1201,7 @@ export function useVisualConfig() {
           docHas(doc, ['augment']) ||
           dirtyFields.has('augmentSilentModeModel') ||
           dirtyFields.has('augmentImageFallbackModel') ||
+          dirtyFields.has('augmentCodebaseRetrievalModel') ||
           dirtyFields.has('augmentShowThinkingProgress');
         if (shouldWriteAugment) {
           ensureMapInDoc(doc, ['augment']);
@@ -1190,6 +1210,11 @@ export function useVisualConfig() {
             doc,
             ['augment', 'image-fallback-model'],
             values.augmentImageFallbackModel
+          );
+          setStringInDoc(
+            doc,
+            ['augment', 'codebase-retrieval-model'],
+            values.augmentCodebaseRetrievalModel
           );
           if (
             shouldWriteManagedField(

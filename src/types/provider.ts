@@ -37,6 +37,7 @@ export interface GeminiKeyConfig {
 }
 
 export interface ProviderKeyConfig {
+  name?: string;
   apiKey: string;
   priority?: number;
   prefix?: string;
@@ -58,6 +59,7 @@ export interface OpenAIProviderConfig {
   apiKeyEntries: ApiKeyEntry[];
   disabled?: boolean;
   headers?: Record<string, string>;
+  chatCompletionsOnly?: boolean;
   models?: ModelAlias[];
   priority?: number;
   testModel?: string;

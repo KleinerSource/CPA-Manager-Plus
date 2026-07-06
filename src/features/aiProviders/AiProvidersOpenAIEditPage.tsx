@@ -7,6 +7,7 @@ import { HeaderInputList } from '@/components/ui/HeaderInputList';
 import { Input } from '@/components/ui/Input';
 import { ModelInputList } from '@/components/ui/ModelInputList';
 import { Select } from '@/components/ui/Select';
+import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import { SecondaryScreenShell } from '@/components/common/SecondaryScreenShell';
 import { useEdgeSwipeBack } from '@/hooks/useEdgeSwipeBack';
 import { useNotificationStore } from '@/stores';
@@ -575,6 +576,16 @@ export function AiProvidersOpenAIEditPage() {
               onChange={(e) => setForm((prev) => ({ ...prev, baseUrl: e.target.value }))}
               disabled={saving || disableControls || isTestingKeys}
             />
+            <div className="form-group">
+              <label>{t('ai_providers.openai_chat_completions_only_label')}</label>
+              <ToggleSwitch
+                checked={Boolean(form.chatCompletionsOnly)}
+                onChange={(value) => setForm((prev) => ({ ...prev, chatCompletionsOnly: value }))}
+                disabled={saving || disableControls || isTestingKeys}
+                ariaLabel={t('ai_providers.openai_chat_completions_only_label')}
+              />
+              <div className="hint">{t('ai_providers.openai_chat_completions_only_hint')}</div>
+            </div>
 
             <HeaderInputList
               entries={form.headers}

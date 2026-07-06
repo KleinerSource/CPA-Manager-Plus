@@ -320,6 +320,18 @@ const buildCodexUsageRequestHeaders = (accountId?: string | null): Record<string
   return headers;
 };
 
+const buildCodexQuotaRequestHeaders = (accountId?: string | null): Record<string, string> => ({
+  ...buildCodexUsageRequestHeaders(accountId),
+  Accept: 'application/json',
+  'OpenAI-Beta': 'codex-1',
+  'OAI-Language': 'zh-CN',
+  Originator: 'Codex Desktop',
+  'Sec-Fetch-Site': 'none',
+  'Sec-Fetch-Mode': 'no-cors',
+  'Sec-Fetch-Dest': 'empty',
+  Priority: 'u=4, i',
+});
+
 type CodexResetCreditsData = {
   availableCount: number | null;
   credits: CodexRateLimitResetCredit[];
@@ -379,7 +391,11 @@ const compareCodexResetCreditExpiry = (
 
 const normalizeCodexResetCreditsPayload = (
   payload: unknown
-): { availableCount: number | null; credits: CodexRateLimitResetCredit[]; invalidPayload: boolean } => {
+): {
+  availableCount: number | null;
+  credits: CodexRateLimitResetCredit[];
+  invalidPayload: boolean;
+} => {
   let parsedPayload = payload;
   if (typeof payload === 'string') {
     const trimmed = payload.trim();
@@ -416,7 +432,7 @@ const normalizeCodexResetCreditsPayload = (
 
 const fetchCodexResetCredits = async (
   authIndex: string,
-  requestHeader: Record<string, string>,
+  accountId: string | null,
   t: TFunction
 ): Promise<CodexResetCreditsData> => {
   try {
@@ -425,12 +441,7 @@ const fetchCodexResetCredits = async (
         authIndex,
         method: 'GET',
         url: CODEX_RATE_LIMIT_RESET_CREDITS_URL,
-        header: {
-          ...requestHeader,
-          Accept: 'application/json',
-          'OpenAI-Beta': 'codex-1',
-          Originator: 'Codex Desktop',
-        },
+        header: buildCodexQuotaRequestHeaders(accountId),
       },
       { timeout: CODEX_RESET_CREDITS_REQUEST_TIMEOUT_MS }
     );
@@ -506,7 +517,7 @@ export const fetchCodexQuota = async (
   const usageResetCreditsAvailableCount = normalizeNumberValue(
     resetCredits?.available_count ?? resetCredits?.availableCount
   );
-  const resetCreditsData = await fetchCodexResetCredits(authIndex, requestHeader, t);
+  const resetCreditsData = await fetchCodexResetCredits(authIndex, accountId, t);
   const resetCreditsCountFromDetails =
     resetCreditsData.credits.length > 0 ? resetCreditsData.credits.length : null;
   const rateLimitResetCreditsAvailableCount =
@@ -550,7 +561,7 @@ const consumeCodexRateLimitResetCredit = async (
     authIndex,
     method: 'POST',
     url: CODEX_RATE_LIMIT_RESET_CREDITS_CONSUME_URL,
-    header: buildCodexUsageRequestHeaders(accountId),
+    header: buildCodexQuotaRequestHeaders(accountId),
     data: JSON.stringify({
       redeem_request_id: createCodexRedeemRequestId(),
     }),
@@ -907,10 +918,7 @@ const resolveKiroOverageQuota = (
   };
 };
 
-export const fetchKiroQuota = async (
-  file: AuthFileItem,
-  _t: TFunction
-): Promise<KiroQuotaData> => {
+export const fetchKiroQuota = async (file: AuthFileItem, _t: TFunction): Promise<KiroQuotaData> => {
   const payload = await authFilesApi.getKiroUsage(file.name);
   const subscriptionTitle = normalizeStringValue(payload.subscriptionInfo?.subscriptionTitle);
   const usageBreakdown = payload.usageBreakdownList?.[0];
