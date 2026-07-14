@@ -298,6 +298,8 @@ export function ModelPricesPage() {
           </div>
         </div>
 
+        <div className={styles.pricingPolicyNote}>{t('model_prices.gpt56_policy_note')}</div>
+
         {syncResult?.sourceResults?.length ? (
           <div className={styles.sourceResults}>
             {syncResult.sourceResults.map((result) => (

@@ -259,20 +259,20 @@ describe('monitoringCenterPageModel summary cards', () => {
     });
   });
 
-  it('keeps legacy cache hit rate within 100 percent', () => {
+  it('reports 80 percent when actual input is 20 and cache read is 80', () => {
     const cards = buildSecondarySummaryCards(
       {
         totalCalls: 0,
         successCalls: 0,
         failureCalls: 0,
         successRate: 0,
-        inputTokens: 4,
+        inputTokens: 20,
         outputTokens: 0,
-        cachedTokens: 20,
+        cachedTokens: 80,
         cacheReadTokens: 0,
         cacheCreationTokens: 0,
         reasoningTokens: 0,
-        totalTokens: 24,
+        totalTokens: 100,
         totalCost: 0,
         averageLatencyMs: null,
         zeroTokenCalls: 0,
@@ -291,8 +291,8 @@ describe('monitoringCenterPageModel summary cards', () => {
 
     expect(cards[3]).toMatchObject({
       label: 'Cache Tokens',
-      value: '20',
-      meta: 'Cache Hit Rate 83.3% · Cache Read 20 · Cache Write 0',
+      value: '80',
+      meta: 'Cache Hit Rate 80.0% · Cache Read 80 · Cache Write 0',
     });
   });
 

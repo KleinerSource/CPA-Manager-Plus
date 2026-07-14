@@ -539,7 +539,7 @@ describe('calculateCost model price preference', () => {
     const cost = calculateCost(
       {
         tokens: {
-          input_tokens: 1_000_000,
+          input_tokens: 750_000,
           output_tokens: 500_000,
           cached_tokens: 250_000,
         },
@@ -550,6 +550,78 @@ describe('calculateCost model price preference', () => {
       }
     );
     expect(cost).toBeCloseTo(3.75);
+  });
+
+  it('uses the unified GPT-5.6 cache-write and long-context policy', () => {
+    const cost = calculateCost(
+      {
+        tokens: {
+          input_tokens: 100_000,
+          output_tokens: 10,
+          cache_read_tokens: 73_000,
+          cache_write_tokens: 100_000,
+        },
+        __modelName: 'openai/gpt-5.6-max',
+      },
+      {
+        'gpt-5.6-sol': {
+          prompt: 5,
+          completion: 30,
+          cache: 0.5,
+          cacheRead: 0.5,
+        },
+      }
+    );
+
+    expect(cost).toBeCloseTo(2.32345);
+  });
+
+  it('uses explicit GPT-5.6 priority rates before long-context multipliers', () => {
+    const cost = calculateCost(
+      {
+        tokens: {
+          input_tokens: 100_000,
+          output_tokens: 10,
+          cache_read_tokens: 73_000,
+          cache_write_tokens: 100_000,
+        },
+        __modelName: 'gpt-5.6',
+        service_tier: 'priority',
+      },
+      {
+        'gpt-5.6-sol': {
+          prompt: 5,
+          completion: 30,
+          cache: 0.5,
+          cacheRead: 0.5,
+          promptPriority: 10,
+          completionPriority: 60,
+          cacheReadPriority: 1,
+          cacheCreationPriority: 12.5,
+        },
+      }
+    );
+
+    expect(cost).toBeCloseTo(4.6469);
+  });
+
+  it('does not apply GPT-5.6 long-context multipliers at the 272K boundary', () => {
+    const cost = calculateCost(
+      {
+        tokens: {
+          input_tokens: 100_000,
+          output_tokens: 10,
+          cache_read_tokens: 72_000,
+          cache_write_tokens: 100_000,
+        },
+        __modelName: 'gpt-5.6-sol',
+      },
+      {
+        'gpt-5.6-sol': { prompt: 5, completion: 30, cache: 0.5, cacheRead: 0.5 },
+      }
+    );
+
+    expect(cost).toBeCloseTo(1.1613);
   });
 
   it('prices fine-grained cache buckets outside input while preserving residual cached input', () => {
@@ -656,6 +728,8 @@ describe('getServiceTierMultiplier', () => {
     expect(getServiceTierMultiplier('gpt-5.4', 'fast')).toBe(2);
     expect(getServiceTierMultiplier('gpt-5.4-mini', 'priority')).toBe(2);
     expect(getServiceTierMultiplier('gpt-5.5', 'priority')).toBe(2.5);
+    expect(getServiceTierMultiplier('gpt-5.6-sol', 'priority')).toBe(2);
+    expect(getServiceTierMultiplier('gpt-5.6-sol', 'flex')).toBe(0.5);
     expect(getServiceTierMultiplier('gpt-5.3-codex', 'priority')).toBe(2);
     expect(getServiceTierMultiplier('gpt-5.4', 'unknown')).toBe(1);
     expect(getServiceTierMultiplier('unknown-model', 'priority')).toBe(1);

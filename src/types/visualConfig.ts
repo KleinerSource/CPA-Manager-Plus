@@ -24,9 +24,7 @@ export type VisualConfigFieldPath =
   | 'streaming.bootstrapRetries'
   | 'streaming.nonstreamKeepaliveInterval';
 
-export type VisualConfigValidationErrorCode =
-  | 'port_range'
-  | 'non_negative_integer';
+export type VisualConfigValidationErrorCode = 'port_range' | 'non_negative_integer';
 
 export type VisualConfigValidationErrors = Partial<
   Record<VisualConfigFieldPath, VisualConfigValidationErrorCode>
@@ -113,6 +111,7 @@ export type VisualConfigValues = {
   errorLogsMaxFiles: string;
   proxyUrl: string;
   forceModelPrefix: boolean;
+  responsesCompactFallbackModel: string;
   codexForceSuperCategory: boolean;
   codexBugMode: boolean;
   passthroughHeaders: boolean;
@@ -149,6 +148,9 @@ export type VisualConfigValues = {
   augmentSilentModeModel: string;
   augmentImageFallbackModel: string;
   augmentCodebaseRetrievalModel: string;
+  augmentUseConfiguredCompletionModels: boolean;
+  augmentCodeCompletionModel: string;
+  augmentChatInputCompletionModel: string;
   augmentShowThinkingProgress: boolean;
   kiroPerAccountRpmLimit: string;
   kiroFreeRpmLimit: string;
@@ -195,6 +197,7 @@ export const DEFAULT_VISUAL_VALUES: VisualConfigValues = {
   errorLogsMaxFiles: '',
   proxyUrl: '',
   forceModelPrefix: false,
+  responsesCompactFallbackModel: '',
   codexForceSuperCategory: false,
   codexBugMode: false,
   passthroughHeaders: false,
@@ -231,6 +234,9 @@ export const DEFAULT_VISUAL_VALUES: VisualConfigValues = {
   augmentSilentModeModel: '',
   augmentImageFallbackModel: '',
   augmentCodebaseRetrievalModel: '',
+  augmentUseConfiguredCompletionModels: false,
+  augmentCodeCompletionModel: '',
+  augmentChatInputCompletionModel: '',
   augmentShowThinkingProgress: false,
   kiroPerAccountRpmLimit: '20',
   kiroFreeRpmLimit: '',
