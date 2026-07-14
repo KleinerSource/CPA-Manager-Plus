@@ -17,7 +17,7 @@
   }
 
   .summaryGrid {
-    grid-template-columns: repeat(8, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .summaryHero {
@@ -68,7 +68,6 @@
 
   .summaryCard:hover {
     z-index: 5;
-    transform: translateY(-1px);
   }
 
   .summaryCard:focus-within {
@@ -141,8 +140,9 @@
     font-variant-numeric: tabular-nums;
     line-height: 1.05;
     letter-spacing: 0;
-    overflow-wrap: anywhere;
-    white-space: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .summaryValueRow {
@@ -150,7 +150,7 @@
     align-items: baseline;
     gap: 12px;
     min-width: 0;
-    max-width: calc(100% - 88px);
+    max-width: 100%;
   }
 
   .summaryValueWrap {
@@ -229,7 +229,6 @@
   .summaryValueWrap:hover .summaryValueTooltip,
   .summaryValueWrap:focus-within .summaryValueTooltip {
     opacity: 1;
-    transform: translateY(0);
   }
 
   .summaryValueTooltipLabel {
@@ -341,6 +340,22 @@
     color: var(--monitor-red);
   }
 
+  .tonerate90 {
+    color: #22c55e;
+  }
+
+  .tonerate75 {
+    color: #84cc16;
+  }
+
+  .tonerate50 {
+    color: #eab308;
+  }
+
+  .tonerate25 {
+    color: #ef4444;
+  }
+
   .statusBadge.tonegood {
     border-color: color-mix(in srgb, var(--monitor-green) 26%, var(--monitor-line));
     background: color-mix(in srgb, var(--monitor-green) 10%, var(--monitor-surface));
@@ -366,6 +381,22 @@
 
   .badText {
     color: var(--monitor-red);
+  }
+
+  .rate90Text {
+    color: #22c55e;
+  }
+
+  .rate75Text {
+    color: #84cc16;
+  }
+
+  .rate50Text {
+    color: #eab308;
+  }
+
+  .rate25Text {
+    color: #ef4444;
   }
 
   .patternBars {
@@ -1189,10 +1220,7 @@
     line-height: 1.45;
     opacity: 0;
     pointer-events: none;
-    transform: translateY(-4px);
-    transition:
-      opacity 0.12s ease,
-      transform 0.12s ease;
+    transition: opacity 0.12s ease;
     white-space: normal;
     user-select: text;
   }
@@ -1215,7 +1243,6 @@
   .realtimeFailureStatus:focus-within .realtimeFailureTooltip {
     opacity: 1;
     pointer-events: auto;
-    transform: translateY(0);
   }
 
   .realtimeFailureCopyButton {

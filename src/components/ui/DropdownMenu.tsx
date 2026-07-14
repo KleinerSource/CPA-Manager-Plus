@@ -16,7 +16,8 @@ export interface DropdownMenuItem {
   key: string;
   label: ReactNode;
   icon?: ReactNode;
-  onClick: () => void;
+  onClick?: () => void;
+  content?: ReactNode;
   disabled?: boolean;
   tone?: 'default' | 'danger';
 }
@@ -53,7 +54,10 @@ export function DropdownMenu({
   const menuId = useId();
 
   const enabledIndices = useMemo(
-    () => items.map((item, index) => (item.disabled ? -1 : index)).filter((value) => value >= 0),
+    () =>
+      items
+        .map((item, index) => (item.disabled || item.content !== undefined ? -1 : index))
+        .filter((value) => value >= 0),
     [items]
   );
 
@@ -190,7 +194,7 @@ export function DropdownMenu({
   const handleItemClick = (item: DropdownMenuItem) => {
     if (item.disabled) return;
     close();
-    item.onClick();
+    item.onClick?.();
   };
 
   const triggerClasses = [styles.trigger, isOpen ? styles.triggerOpen : '', triggerClassName]
@@ -231,6 +235,14 @@ export function DropdownMenu({
               onKeyDown={handleMenuKeyDown}
             >
               {items.map((item, index) => {
+                if (item.content !== undefined) {
+                  return (
+                    <div key={item.key} className={styles.itemContent} role="group">
+                      {item.content}
+                    </div>
+                  );
+                }
+
                 const itemClasses = [
                   styles.item,
                   item.tone === 'danger' ? styles.itemDanger : '',

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { IconPencil, IconTrash2 } from '@/components/ui/icons';
 
 interface ProviderListProps<T> {
   items: T[];
@@ -15,11 +16,13 @@ interface ProviderListProps<T> {
   deleteLabel?: string;
   actionsDisabled?: boolean;
   getRowDisabled?: (item: T, index: number) => boolean;
+  renderPriority?: (item: T, index: number) => ReactNode;
   renderExtraActions?: (item: T, index: number) => ReactNode;
   listClassName?: string;
   rowClassName?: string;
   metaClassName?: string;
   actionsClassName?: string;
+  actionButtonClassName?: string;
 }
 
 export function ProviderList<T>({
@@ -34,11 +37,13 @@ export function ProviderList<T>({
   deleteLabel,
   actionsDisabled = false,
   getRowDisabled,
+  renderPriority,
   renderExtraActions,
   listClassName,
   rowClassName,
   metaClassName,
   actionsClassName,
+  actionButtonClassName,
 }: ProviderListProps<T>) {
   const { t } = useTranslation();
 
@@ -58,25 +63,35 @@ export function ProviderList<T>({
           <div
             key={keyField(item, index)}
             className={rowClassName ?? 'item-row'}
-            style={rowDisabled ? { opacity: 0.6 } : undefined}
+            data-provider-disabled={rowDisabled ? 'true' : undefined}
+            style={actionsDisabled ? { opacity: 0.6 } : undefined}
           >
             <div className={metaClassName ?? 'item-meta'}>{renderContent(item, index)}</div>
             <div className={actionsClassName ?? 'item-actions'}>
+              {renderPriority ? renderPriority(item, index) : null}
               <Button
                 variant="secondary"
-                size="xs"
+                size="sm"
+                iconOnly
                 onClick={() => onEdit(item, index)}
                 disabled={actionsDisabled}
+                className={actionButtonClassName}
+                title={t('common.edit')}
+                aria-label={t('common.edit')}
               >
-                {t('common.edit')}
+                <IconPencil size={16} />
               </Button>
               <Button
                 variant="danger"
-                size="xs"
+                size="sm"
+                iconOnly
                 onClick={() => onDelete(item, index)}
                 disabled={actionsDisabled}
+                className={actionButtonClassName}
+                title={deleteLabel || t('common.delete')}
+                aria-label={deleteLabel || t('common.delete')}
               >
-                {deleteLabel || t('common.delete')}
+                <IconTrash2 size={16} />
               </Button>
               {renderExtraActions ? renderExtraActions(item, index) : null}
             </div>

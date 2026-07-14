@@ -839,7 +839,6 @@
   transition: transform $transition-fast, box-shadow $transition-fast, border-color $transition-fast;
 
   &:hover {
-    transform: translateY(-2px);
     box-shadow: $shadow-md;
     border-color: color-mix(in srgb, var(--primary-color) 20%, transparent);
   }

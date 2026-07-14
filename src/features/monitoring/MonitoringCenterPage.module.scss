@@ -273,7 +273,6 @@
 
 .actionButton:hover,
 .filterToggleChip:hover {
-  transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--monitor-accent) 35%, var(--monitor-line-strong));
   background: var(--monitor-surface-hover);
   color: var(--monitor-ink);
@@ -707,7 +706,6 @@
 .inlineActionButton:hover,
 .quotaRefreshButton:hover,
 .refreshButton:hover {
-  transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--monitor-accent) 35%, var(--monitor-line-strong));
   background: var(--monitor-surface-hover);
   color: var(--monitor-ink);
@@ -933,7 +931,6 @@
 }
 
 .accountOverviewToolButton:hover {
-  transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--monitor-accent) 35%, var(--monitor-line-strong));
   background: var(--monitor-surface-hover);
 }

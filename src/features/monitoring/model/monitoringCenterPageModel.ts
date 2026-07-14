@@ -33,6 +33,7 @@ import type {
   MonitoringAccountQuotaTarget,
 } from '@/features/monitoring/accountOverviewQuotaTargets';
 import { formatStatusWindowLabel } from '@/features/monitoring/model/statusWindow';
+import { getMonitoringSuccessRateTone } from '@/features/monitoring/model/successRateTone';
 import {
   fetchAntigravityQuota,
   fetchClaudeQuota,
@@ -536,7 +537,7 @@ export const buildPrimarySummaryCards = ({
     fullLabel: t('monitoring.call_success_rate'),
     value: formatPercent(summary.successRate),
     meta: formatDurationMs(summary.averageLatencyMs, { locale }),
-    tone: summary.successRate >= 0.95 ? 'good' : summary.successRate >= 0.85 ? 'warn' : 'bad',
+    tone: getMonitoringSuccessRateTone(summary.successRate),
     icon: 'success',
     accent: 'green',
   },

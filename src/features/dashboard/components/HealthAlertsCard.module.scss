@@ -49,13 +49,16 @@
       border-radius: 50%;
       background: #ccc;
 
-      &.good {
-        background: #10b981;
+      &.rate90 {
+        background: #22c55e;
       }
-      &.warn {
-        background: #f59e0b;
+      &.rate75 {
+        background: #84cc16;
       }
-      &.bad {
+      &.rate50 {
+        background: #eab308;
+      }
+      &.rate25 {
         background: #ef4444;
       }
     }
@@ -136,7 +139,6 @@
           .failureTooltip {
             opacity: 1;
             pointer-events: auto;
-            transform: translateY(-6px);
           }
         }
       }
@@ -168,10 +170,7 @@
         line-height: 1.45;
         opacity: 0;
         pointer-events: none;
-        transform: translateY(-2px);
-        transition:
-          opacity 0.14s ease,
-          transform 0.14s ease;
+        transition: opacity 0.14s ease;
         white-space: normal;
       }
 

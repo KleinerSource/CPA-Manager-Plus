@@ -320,7 +320,6 @@
 .iconButton:hover,
 .foldButton:hover,
 .quickLink:hover {
-  transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--inspect-accent) 32%, var(--inspect-line-strong));
   background: var(--inspect-surface-hover);
   color: var(--inspect-ink);
@@ -495,7 +494,6 @@
 }
 
 .summaryCard:hover {
-  transform: translateY(-1px);
   border-color: var(--inspect-line-strong);
   box-shadow: var(--shadow-lg);
 }
@@ -1477,7 +1475,6 @@
 .configOverviewItem:hover {
   border-color: color-mix(in srgb, var(--overview-accent) 52%, var(--inspect-line-strong));
   background: color-mix(in srgb, var(--overview-accent) 6%, var(--inspect-surface-elevated));
-  transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
 
@@ -1878,7 +1875,6 @@
 }
 
 .runHistoryCard:hover {
-  transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--inspect-accent) 32%, var(--inspect-line-strong));
   background: var(--inspect-surface-hover);
 }

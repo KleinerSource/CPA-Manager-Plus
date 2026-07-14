@@ -211,13 +211,18 @@ export function AuthFileCard(props: AuthFileCardProps) {
   const quotaType = resolveQuotaType(file);
   const showQuotaLayout = Boolean(quotaType) && !isRuntimeOnly && !compact;
   const quotaRefresh = useAuthFileQuotaRefresh(file, quotaType, disableControls);
-  const showQuotaRefreshButton = showQuotaLayout && quotaRefresh.quotaStatus !== 'loading';
+  const showQuotaRefreshButton =
+    showQuotaLayout && quotaRefresh.quotaStatus !== 'loading' && quotaRefresh.canRefreshQuota;
   const resetCreditsAvailableCount =
     quotaType === 'codex'
       ? getCodexQuotaResetCreditsAvailableCount(quotaRefresh.quota)
       : null;
   const showQuotaResetButton =
-    showQuotaLayout && quotaType === 'codex' && quotaRefresh.quotaStatus === 'success';
+    showQuotaLayout &&
+    quotaType === 'codex' &&
+    quotaRefresh.quotaStatus === 'success' &&
+    quotaRefresh.canRefreshQuota &&
+    (resetCreditsAvailableCount ?? 0) > 0;
   const canResetQuota =
     showQuotaResetButton &&
     (resetCreditsAvailableCount ?? 0) > 0 &&
@@ -360,6 +365,18 @@ export function AuthFileCard(props: AuthFileCardProps) {
                   </span>
                 )}
                 <span className={`${styles.stateBadge} ${stateBadgeClass}`}>{stateLabel}</span>
+                <div
+                  className={`${styles.cardStats} ${styles.cardStatsHeader} ${compact ? styles.cardStatsCompact : ''}`}
+                >
+                  <div className={`${styles.statPill} ${styles.statSuccess}`}>
+                    <span className={styles.statLabel}>{t('stats.success')}</span>
+                    <span className={styles.statValue}>{fileStats.success}</span>
+                  </div>
+                  <div className={`${styles.statPill} ${styles.statFailure}`}>
+                    <span className={styles.statLabel}>{t('stats.failure')}</span>
+                    <span className={styles.statValue}>{fileStats.failure}</span>
+                  </div>
+                </div>
                 {kiroAccountTypeBadgeLabel && (
                   <span className={`${styles.stateBadge} ${styles.kiroAccountBadge}`}>
                     {kiroAccountTypeBadgeLabel}
@@ -411,6 +428,15 @@ export function AuthFileCard(props: AuthFileCardProps) {
                     </span>
                   );
                 })}
+                {planLabel && (
+                  <span
+                    className={styles.cardPlanBadge}
+                    title={`${t('codex_quota.plan_label')}: ${planLabel}`}
+                  >
+                    <span className={styles.cardPlanLabel}>{t('codex_quota.plan_label')}</span>
+                    <span className={styles.cardPlanValue}>{planLabel}</span>
+                  </span>
+                )}
               </div>
               <span className={styles.fileName} title={file.name}>
                 {file.name}
@@ -435,14 +461,6 @@ export function AuthFileCard(props: AuthFileCardProps) {
               <span className={styles.metaLabel}>{t('auth_files.file_modified')}</span>
               <span className={styles.metaValue}>{formatModified(file)}</span>
             </div>
-            {planLabel && (
-              <div className={`${styles.metaItem} ${styles.planMetaItem}`}>
-                <span className={styles.metaLabel}>{t('codex_quota.plan_label')}</span>
-                <span className={`${styles.metaValue} ${styles.planMetaValue}`}>
-                  {planLabel}
-                </span>
-              </div>
-            )}
             {projectIdValue && (
               <div className={styles.metaItem} title={projectIdValue}>
                 <span className={styles.metaLabel}>{t('auth_files.project_id_display')}</span>
@@ -459,17 +477,6 @@ export function AuthFileCard(props: AuthFileCardProps) {
           )}
 
           <div className={`${styles.cardInsights} ${compact ? styles.cardInsightsCompact : ''}`}>
-            <div className={`${styles.cardStats} ${compact ? styles.cardStatsCompact : ''}`}>
-              <div className={`${styles.statPill} ${styles.statSuccess}`}>
-                <span className={styles.statLabel}>{t('stats.success')}</span>
-                <span className={styles.statValue}>{fileStats.success}</span>
-              </div>
-              <div className={`${styles.statPill} ${styles.statFailure}`}>
-                <span className={styles.statLabel}>{t('stats.failure')}</span>
-                <span className={styles.statValue}>{fileStats.failure}</span>
-              </div>
-            </div>
-
             <div className={`${styles.statusPanel} ${compact ? styles.statusPanelCompact : ''}`}>
               <div className={styles.statusPanelLabel}>
                 <span>{t('auth_files.health_status_label')}</span>
@@ -579,7 +586,7 @@ export function AuthFileCard(props: AuthFileCardProps) {
                 </div>
               )}
             </div>
-            {priorityValue !== undefined && (
+            {priorityValue !== undefined && priorityValue !== 0 && (
               <div className={styles.cardActionPriority}>
                 <span className={styles.priorityActionBadge}>
                   <span className={styles.priorityActionLabel}>

@@ -24,7 +24,6 @@
 
 .trigger:hover,
 .triggerOpen {
-  transform: translateY(-1px);
   border-color: var(--border-subtle, #d8e5f2);
   background: var(--surface-subtle-hover, #f1f7fe);
 }
@@ -79,6 +78,11 @@
   transition:
     background-color 0.12s ease,
     color 0.12s ease;
+}
+
+.itemContent {
+  width: 100%;
+  padding: 4px;
 }
 
 .item:hover,

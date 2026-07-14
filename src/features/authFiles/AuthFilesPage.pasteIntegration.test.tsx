@@ -363,7 +363,7 @@ describe('AuthFilesPage real auth JSON paste flow', () => {
 
     await vi.waitFor(() => {
       expect(mocks.saveJsonObject).toHaveBeenCalledWith(
-        'session-user-tag-example-com.codex.json',
+        expect.stringMatching(/^\d{2}-\d{2}-\d{2}-\d{2}-codex-account\.json$/),
         expect.objectContaining({
           type: 'codex',
           email: 'Session.User+tag@example.com',
@@ -372,9 +372,10 @@ describe('AuthFilesPage real auth JSON paste flow', () => {
         })
       );
     });
+    const savedFileName = mocks.saveJsonObject.mock.calls[0]?.[0] as string;
     await vi.waitFor(() => {
       expect(mocks.showNotification).toHaveBeenCalledWith(
-        'auth_files.paste_success:session-user-tag-example-com.codex.json',
+        `auth_files.paste_success:${savedFileName}`,
         'success'
       );
       expect(renderer!.root.findAllByProps({ id: 'auth-json-paste-content' })).toHaveLength(0);

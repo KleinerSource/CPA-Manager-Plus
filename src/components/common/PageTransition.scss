@@ -16,7 +16,6 @@
     flex: 1;
     background: transparent;
     backface-visibility: hidden;
-    transform: translateZ(0);
 
     // During animation, exit layer uses absolute positioning
     &--exit {

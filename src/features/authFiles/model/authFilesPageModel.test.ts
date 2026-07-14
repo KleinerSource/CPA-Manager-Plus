@@ -4,6 +4,7 @@ import {
   authFileMatchesCodexStatusFilter,
   authFileMatchesProblemTypeFilter,
   buildAuthFileCodexInspectionMap,
+  compareAuthFileDisabledLast,
   getAuthFileCodexInspectionKey,
   getAuthFileCodexStatus,
   getAuthFilePlanSortRank,
@@ -88,6 +89,17 @@ describe('auth file problem type helpers', () => {
     expect(
       authFileMatchesProblemTypeFilter({ name: 'server-error.json', errorStatus: 500 }, 'other')
     ).toBe(true);
+  });
+});
+
+describe('auth file sorting helpers', () => {
+  it('places disabled files after enabled files', () => {
+    const enabled = codexFile({ name: 'enabled.json' });
+    const disabled = codexFile({ name: 'disabled.json', disabled: true });
+
+    expect(compareAuthFileDisabledLast(enabled, disabled)).toBeLessThan(0);
+    expect(compareAuthFileDisabledLast(disabled, enabled)).toBeGreaterThan(0);
+    expect(compareAuthFileDisabledLast(enabled, codexFile({ name: 'other.json' }))).toBe(0);
   });
 });
 

@@ -34,6 +34,14 @@ const formatPercent = (value: number | undefined) => {
   return `${(value * 100).toFixed(2)}%`;
 };
 
+const getRequestHealthColor = (successRate: number | undefined, totalCalls: number | undefined) => {
+  if (successRate === undefined || totalCalls === undefined || totalCalls === 0) return '#94a3b8';
+  if (successRate >= 0.9) return '#22c55e';
+  if (successRate >= 0.75) return '#84cc16';
+  if (successRate >= 0.5) return '#eab308';
+  return '#ef4444';
+};
+
 interface MetricCardProps {
   label: string;
   value: string;
@@ -44,6 +52,7 @@ interface MetricCardProps {
 }
 
 type MetricStyle = CSSProperties & Record<'--accent-color', string>;
+type RequestSummaryStyle = CSSProperties & Record<'--accent-color' | '--health-color', string>;
 type RankStyle = CSSProperties & Record<'--share', number>;
 
 function MetricCard({ label, value, subValue, icon, color, loading }: MetricCardProps) {
@@ -60,6 +69,72 @@ function MetricCard({ label, value, subValue, icon, color, loading }: MetricCard
       <div className={styles.metricBgChart}>
         <svg viewBox="0 0 100 30" preserveAspectRatio="none">
           <path d="M0,25 Q15,5 30,20 T60,10 T100,25" fill="none" stroke={color} strokeWidth="2" opacity="0.2" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+interface RequestSummaryProps {
+  label: string;
+  value: string;
+  subValue?: string;
+  successLabel: string;
+  successRate: string;
+  successCount: string;
+  successWidth: number;
+  healthColor: string;
+  icon: ReactNode;
+  color: string;
+  loading: boolean;
+}
+
+function RequestSummary({
+  label,
+  value,
+  subValue,
+  successLabel,
+  successRate,
+  successCount,
+  successWidth,
+  healthColor,
+  icon,
+  color,
+  loading,
+}: RequestSummaryProps) {
+  return (
+    <div
+      className={styles.requestSummary}
+      style={{ '--accent-color': color, '--health-color': healthColor } as RequestSummaryStyle}
+    >
+      <div className={styles.metricHeader}>
+        <div className={styles.metricIcon}>{icon}</div>
+        <span className={styles.metricLabel}>{label}</span>
+      </div>
+      <div className={styles.metricBody}>
+        <div className={styles.requestValue}>{loading ? '...' : value}</div>
+        {subValue && <div className={styles.metricSubValue}>{subValue}</div>}
+      </div>
+      <div className={styles.requestHealth}>
+        <div className={styles.requestHealthHeader}>
+          <span>
+            {successLabel} {loading ? '...' : successRate}
+          </span>
+          <span>{loading ? '...' : successCount}</span>
+        </div>
+        <div className={styles.requestHealthTrack}>
+          <div className={styles.requestHealthBar} style={{ width: `${successWidth}%` }} />
+        </div>
+      </div>
+      <div className={styles.metricBgChart}>
+        <svg viewBox="0 0 100 30" preserveAspectRatio="none">
+          <path
+            d="M0,25 Q15,5 30,20 T60,10 T100,25"
+            fill="none"
+            stroke={color}
+            strokeWidth="2"
+            opacity="0.2"
+          />
         </svg>
       </div>
     </div>
@@ -85,16 +160,7 @@ export function UsageMetricsCard({
       })
     : undefined;
 
-  const metrics = [
-    {
-      label: t('dashboard.today_requests'),
-      value: today ? formatMetric(today.total_calls) : loadingText,
-      subValue: today
-        ? t('dashboard.metric_failure_count', { value: formatMetric(today.failure_calls) })
-        : lastRefreshedText,
-      icon: <IconInbox size={20} />,
-      color: '#3b82f6',
-    },
+  const supportingMetrics = [
     {
       label: t('dashboard.rpm_30m'),
       value: rolling ? formatMetric(rolling.rpm, 1) : loadingText,
@@ -123,15 +189,6 @@ export function UsageMetricsCard({
       color: '#f59e0b',
     },
     {
-      label: t('dashboard.success_rate'),
-      value: today ? formatPercent(today.success_rate) : loadingText,
-      subValue: today
-        ? `${formatMetric(today.success_calls)} / ${formatMetric(today.total_calls)}`
-        : undefined,
-      icon: <IconTrendingUp size={20} />,
-      color: '#10b981',
-    },
-    {
       label: t('dashboard.avg_latency'),
       value: today
         ? formatDurationMs(today.average_latency_ms, { locale: i18n.language })
@@ -144,13 +201,39 @@ export function UsageMetricsCard({
     },
   ];
 
+  const successWidth = today ? Math.min(Math.max(today.success_rate * 100, 0), 100) : 0;
+  const requestHealthColor = getRequestHealthColor(today?.success_rate, today?.total_calls);
+  const requestSuccessRate = today ? formatPercent(today.success_rate) : loadingText;
+  const requestSuccessCount = today
+    ? `${formatMetric(today.success_calls)} / ${formatMetric(today.total_calls)}`
+    : loadingText;
+
   if (mode === 'metrics-only') {
     return (
       <>
-        <div className={styles.metricsGrid}>
-          {metrics.map((m) => (
-            <MetricCard key={m.label} {...m} loading={loading} />
-          ))}
+        <div className={styles.metricsPanel}>
+          <RequestSummary
+            label={t('dashboard.today_requests')}
+            value={today ? formatMetric(today.total_calls) : loadingText}
+            subValue={
+              today
+                ? t('dashboard.metric_failure_count', { value: formatMetric(today.failure_calls) })
+                : lastRefreshedText
+            }
+            successLabel={t('dashboard.success_rate')}
+            successRate={requestSuccessRate}
+            successCount={requestSuccessCount}
+            successWidth={successWidth}
+            healthColor={requestHealthColor}
+            icon={<IconInbox size={20} />}
+            color="#3b82f6"
+            loading={loading}
+          />
+          <div className={styles.supportingMetrics}>
+            {supportingMetrics.map((metric) => (
+              <MetricCard key={metric.label} {...metric} loading={loading} />
+            ))}
+          </div>
         </div>
         {error ? <div className={styles.error}>{error}</div> : null}
       </>

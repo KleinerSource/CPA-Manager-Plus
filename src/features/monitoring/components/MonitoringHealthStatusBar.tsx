@@ -5,6 +5,10 @@ import {
   getNextMonitoringStatusBlockIndex,
 } from '@/features/monitoring/healthStatusAccessibility';
 import { formatStatusWindowLabel } from '@/features/monitoring/model/statusWindow';
+import {
+  getMonitoringSuccessRateTone,
+  type MonitoringSuccessRateTone,
+} from '@/features/monitoring/model/successRateTone';
 import type { StatusBarData, StatusBlockDetail } from '@/utils/recentRequests';
 import styles from '../MonitoringCenterPage.module.scss';
 
@@ -29,6 +33,13 @@ const rateToStatusColor = (rate: number) => {
   const g = Math.round(from.g + (to.g - from.g) * localT);
   const b = Math.round(from.b + (to.b - from.b) * localT);
   return `rgb(${r}, ${g}, ${b})`;
+};
+
+const monitoringStatusRateClassMap: Record<MonitoringSuccessRateTone, string> = {
+  rate90: styles.monitoringStatusRate90,
+  rate75: styles.monitoringStatusRate75,
+  rate50: styles.monitoringStatusRate50,
+  rate25: styles.monitoringStatusRate25,
 };
 
 export function MonitoringHealthStatusBar({
@@ -57,11 +68,7 @@ export function MonitoringHealthStatusBar({
   const hasData = statusData.totalSuccess + statusData.totalFailure > 0;
   const rateClassName = !hasData
     ? ''
-    : statusData.successRate >= 90
-      ? styles.monitoringStatusRateHigh
-      : statusData.successRate >= 50
-        ? styles.monitoringStatusRateMedium
-        : styles.monitoringStatusRateLow;
+    : monitoringStatusRateClassMap[getMonitoringSuccessRateTone(statusData.successRate / 100)];
 
   useEffect(() => {
     if (resolvedActiveTooltip === null) return;

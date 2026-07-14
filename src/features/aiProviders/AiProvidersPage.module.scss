@@ -48,6 +48,8 @@ $openai-toolbar-control-height: 36px;
 }
 
 .openaiProviderList {
+  width: 100%;
+  min-width: 0;
   display: grid;
   gap: $spacing-md;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 350px), 1fr));
@@ -57,20 +59,53 @@ $openai-toolbar-control-height: 36px;
   }
 }
 
-.openaiProviderCard {
+.openaiProviderCard,
+.openaiProviderList :global(.item-row) {
   border: 1px solid var(--border-color);
   border-radius: $radius-md;
   padding: $spacing-md;
   background: var(--bg-primary);
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
   align-items: stretch;
   gap: $spacing-sm;
+  flex-wrap: nowrap;
   min-height: 0;
   min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition:
+    border-color $transition-fast,
+    box-shadow $transition-fast,
+    transform $transition-fast;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--primary-color) 42%, var(--border-color));
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  }
 }
 
-.openaiProviderMeta {
+.providerCardDisabled,
+.openaiProviderList :global(.item-row[data-provider-disabled='true']) {
+  background-color: color-mix(in srgb, var(--bg-primary) 78%, var(--surface-subtle));
+  border-color: color-mix(in srgb, var(--border-color) 62%, transparent);
+
+  &:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--border-color);
+  }
+}
+
+.providerCardDisabled > .openaiProviderMeta,
+.openaiProviderList :global(.item-row[data-provider-disabled='true']) > :global(.item-meta) {
+  opacity: 0.72;
+}
+
+.openaiProviderMeta,
+.openaiProviderList :global(.item-meta) {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -78,16 +113,98 @@ $openai-toolbar-control-height: 36px;
   min-width: 0;
 }
 
-.openaiProviderActions {
+.openaiProviderActions,
+.openaiProviderList :global(.item-actions) {
   display: flex;
+  align-items: center;
   gap: $spacing-sm;
   flex-wrap: wrap;
   justify-content: flex-end;
+  width: 100%;
 }
 
-.openaiProviderTitle {
-  font-weight: 700;
+.providerActionPriority {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin-right: auto;
+  padding: 0 4px;
+}
+
+.providerPriorityBadge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.providerPriorityLabel {
+  color: var(--text-tertiary);
+
+  &::after {
+    content: ':';
+  }
+}
+
+.providerPriorityValue {
   color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.providerActionIconButton:global(.btn.btn-sm) {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0;
+  box-sizing: border-box;
+  border-radius: 10px;
+  gap: 0;
+}
+
+.providerActionIconButton:global(.btn.btn-sm) > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.providerCardTitleRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 2px;
+}
+
+.providerCardTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-primary);
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.providerCardTitleRow :global(.status-badge) {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.providerCardTitleRow .cardStats {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  gap: 6px;
+}
+
+.providerCardTitleRow .statPill {
+  padding: 4px 8px;
+  font-size: 12px;
 }
 
 // 排序控件
@@ -367,6 +484,12 @@ $openai-toolbar-control-height: 36px;
   &:hover {
     background: var(--surface-subtle-hover);
   }
+
+  > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
 }
 
 .openaiAddButton:global(.btn.btn-primary) {
@@ -422,8 +545,6 @@ $openai-toolbar-control-height: 36px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 8px;
-  padding-top: 4px;
 }
 
 .statPill {
@@ -512,6 +633,35 @@ $openai-toolbar-control-height: 36px;
     font-weight: 600;
     color: var(--text-primary);
     flex-shrink: 0;
+  }
+}
+
+// 可折叠模型列表
+.modelListSection {
+  min-width: 0;
+  max-width: 100%;
+  margin-top: 8px;
+}
+
+.modelListToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.modelExpandButton:global(.btn.btn-ghost) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 0 7px;
+  color: var(--primary-color);
+  white-space: nowrap;
+
+  &:hover {
+    background: var(--surface-subtle-hover);
   }
 }
 
@@ -843,7 +993,6 @@ $openai-toolbar-control-height: 36px;
 
   .statusBlockWrapper:hover &,
   .statusBlockWrapper.statusBlockActive & {
-    transform: scaleY(1.8);
     opacity: 0.9;
   }
 }

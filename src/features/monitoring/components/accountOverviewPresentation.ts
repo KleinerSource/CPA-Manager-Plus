@@ -4,6 +4,7 @@ import type { MonitoringAccountQuotaProvider } from '@/features/monitoring/accou
 import type { MonitoringAccountRow } from '@/features/monitoring/hooks/useMonitoringData';
 import { normalizePlanType } from '@/utils/quota';
 import { formatCompactNumber, formatUsd } from '@/utils/usage';
+import { getMonitoringSuccessRateTone } from '../model/successRateTone';
 import styles from '../MonitoringCenterPage.module.scss';
 
 const PREMIUM_CODEX_PLAN_TYPES = new Set(['pro', 'prolite', 'pro-lite', 'pro_lite']);
@@ -218,4 +219,4 @@ export const getAccountStatusDotClassName = (tone: string) => {
 };
 
 export const getSuccessRateClassName = (rate: number) =>
-  rate >= 0.95 ? styles.goodText : rate >= 0.85 ? styles.warnText : styles.badText;
+  styles[`${getMonitoringSuccessRateTone(rate)}Text`];

@@ -5,6 +5,7 @@ import type { AmpcodeConfig } from '@/types';
 import { maskApiKey } from '@/utils/format';
 import styles from '@/features/aiProviders/AiProvidersPage.module.scss';
 import { useTranslation } from 'react-i18next';
+import { ModelTagList } from '../ModelTagList';
 
 interface AmpcodeSectionProps {
   config: AmpcodeConfig | null | undefined;
@@ -67,29 +68,17 @@ export function AmpcodeSection({
                 {(config?.forceModelMappings ?? false) ? t('common.yes') : t('common.no')}
               </span>
             </div>
-            <div className={styles.fieldRow} style={{ marginTop: 8 }}>
-              <span className={styles.fieldLabel}>{t('ai_providers.ampcode_model_mappings_count')}:</span>
-              <span className={styles.fieldValue}>{config?.modelMappings?.length || 0}</span>
-            </div>
             <div className={styles.fieldRow}>
               <span className={styles.fieldLabel}>{t('ai_providers.ampcode_upstream_api_keys_count')}:</span>
               <span className={styles.fieldValue}>{config?.upstreamApiKeys?.length || 0}</span>
             </div>
-            {config?.modelMappings?.length ? (
-              <div className={styles.modelTagList}>
-                {config.modelMappings.slice(0, 5).map((mapping) => (
-                  <span key={`${mapping.from}→${mapping.to}`} className={styles.modelTag}>
-                    <span className={styles.modelName}>{mapping.from}</span>
-                    <span className={styles.modelAlias}>{mapping.to}</span>
-                  </span>
-                ))}
-                {config.modelMappings.length > 5 && (
-                  <span className={styles.modelTag}>
-                    <span className={styles.modelName}>+{config.modelMappings.length - 5}</span>
-                  </span>
-                )}
-              </div>
-            ) : null}
+            <ModelTagList
+              models={(config?.modelMappings ?? []).map((mapping) => ({
+                name: mapping.from,
+                alias: mapping.to,
+              }))}
+              countLabel={t('ai_providers.ampcode_model_mappings_count')}
+            />
           </>
         )}
       </Card>

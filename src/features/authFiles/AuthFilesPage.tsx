@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type DragEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -19,7 +20,8 @@ import { usePageTransitionLayer } from '@/components/common/PageTransitionLayer'
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import { IconFilterAll, IconSearch } from '@/components/ui/icons';
+import { DropdownMenu } from '@/components/ui/DropdownMenu';
+import { IconFileText, IconFilterAll, IconSearch, IconSlidersHorizontal } from '@/components/ui/icons';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import { copyToClipboard } from '@/utils/clipboard';
@@ -61,6 +63,7 @@ import {
   authFileMatchesCodexStatusFilter,
   buildAuthFileCodexInspectionMap,
   buildWildcardSearch,
+  compareAuthFileDisabledLast,
   compareAuthFileName,
   compareAuthFileNote,
   compareAuthFilePriority,
@@ -134,6 +137,7 @@ export function AuthFilesPage() {
   const [batchActionBarVisible, setBatchActionBarVisible] = useState(false);
   const [uiStateHydrated, setUiStateHydrated] = useState(false);
   const [authJsonPasteOpen, setAuthJsonPasteOpen] = useState(false);
+  const [isDragActive, setIsDragActive] = useState(false);
   const [lastCodexInspectionResults, setLastCodexInspectionResults] = useState<
     AuthFileCodexInspectionSnapshot[]
   >([]);
@@ -159,6 +163,7 @@ export function AuthFilesPage() {
     fileInputRef,
     loadFiles,
     handleUploadClick,
+    handleFiles,
     handleFileChange,
     savePastedAuthJson,
     handleDelete,
@@ -632,6 +637,8 @@ export function AuthFilesPage() {
 
     if (sortMode === 'default') {
       copy.sort((a, b) => {
+        const disabledCompare = compareAuthFileDisabledLast(a, b);
+        if (disabledCompare !== 0) return disabledCompare;
         const superCompare = compareSuperCategoryFirst(a, b);
         if (superCompare !== 0) return superCompare;
         const leftRank = getAuthFilePlanSortRank(a, codexQuota[a.name]);
@@ -653,20 +660,29 @@ export function AuthFilesPage() {
         return compareAuthFileName(a, b);
       });
     } else if (sortMode === 'name-asc') {
-      copy.sort((a, b) => compareSuperCategoryFirst(a, b) || compareAuthFileName(a, b));
+      copy.sort(
+        (a, b) =>
+          compareAuthFileDisabledLast(a, b) ||
+          compareSuperCategoryFirst(a, b) ||
+          compareAuthFileName(a, b)
+      );
     } else if (sortMode === 'note-asc' || sortMode === 'note-desc') {
       copy.sort(
         (a, b) =>
+          compareAuthFileDisabledLast(a, b) ||
           compareSuperCategoryFirst(a, b) ||
           compareAuthFileNote(a, b, sortMode === 'note-desc' ? 'desc' : 'asc')
       );
     } else if (sortMode === 'priority-asc' || sortMode === 'priority-desc') {
       copy.sort((a, b) =>
+        compareAuthFileDisabledLast(a, b) ||
         compareSuperCategoryFirst(a, b) ||
         compareAuthFilePriority(a, b, sortMode === 'priority-desc' ? 'desc' : 'asc')
       );
     } else if (sortMode === 'plan-asc' || sortMode === 'plan-desc') {
       copy.sort((a, b) => {
+        const disabledCompare = compareAuthFileDisabledLast(a, b);
+        if (disabledCompare !== 0) return disabledCompare;
         const superCompare = compareSuperCategoryFirst(a, b);
         if (superCompare !== 0) return superCompare;
         const leftRank = getAuthFilePlanSortRank(a, codexQuota[a.name]);
@@ -930,6 +946,20 @@ export function AuthFilesPage() {
       : `${t('common.delete')} ${getTypeLabel(t, normalizedFilter)}`;
   })();
 
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (!disableControls && !uploading && event.dataTransfer.types.includes('Files')) {
+      setIsDragActive(true);
+    }
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragActive(false);
+    if (disableControls || uploading || event.dataTransfer.files.length === 0) return;
+    void handleFiles(event.dataTransfer.files);
+  };
+
   return (
     <div className={styles.container}>
       <section className={styles.authFilesShell}>
@@ -1021,6 +1051,29 @@ export function AuthFilesPage() {
                 />
               </div>
             </div>
+            <div
+              className={`${styles.uploadDropzone} ${isDragActive ? styles.uploadDropzoneActive : ''}`}
+              role="button"
+              tabIndex={disableControls || uploading ? -1 : 0}
+              aria-disabled={disableControls || uploading}
+              onClick={() => {
+                if (!disableControls && !uploading) {
+                  handleUploadClick();
+                }
+              }}
+              onKeyDown={(event) => {
+                if ((event.key === 'Enter' || event.key === ' ') && !disableControls && !uploading) {
+                  event.preventDefault();
+                  handleUploadClick();
+                }
+              }}
+              onDragOver={handleDragOver}
+              onDragLeave={() => setIsDragActive(false)}
+              onDrop={handleDrop}
+            >
+              <IconFileText size={20} />
+              <span>{t('auth_files.upload_dropzone')}</span>
+            </div>
             <div className={styles.filterControlsPanel}>
               <div className={styles.filterControls}>
                 <div className={styles.filterItem}>
@@ -1081,87 +1134,71 @@ export function AuthFilesPage() {
                     fullWidth
                   />
                 </div>
-                <div className={`${styles.filterItem} ${styles.filterToggleItem}`}>
+                <div className={`${styles.filterItem} ${styles.displayOptionsItem}`}>
                   <label>{t('auth_files.display_options_label')}</label>
-                  <div className={styles.filterToggleGroup}>
-                    <div className={styles.filterToggleCard}>
-                      <ToggleSwitch
-                        checked={problemOnly}
-                        onChange={(value) => {
-                          setProblemOnly(value);
-                          if (value) setHealthyOnly(false);
-                          if (!value) setProblemTypeFilter('all');
-                          setPage(1);
-                        }}
-                        ariaLabel={t('auth_files.problem_filter_only')}
-                        label={
-                          <span className={styles.filterToggleLabel}>
-                            {t('auth_files.problem_filter_only')}
-                          </span>
-                        }
-                      />
-                    </div>
-                    <div className={styles.filterToggleCard}>
-                      <ToggleSwitch
-                        checked={disabledOnly}
-                        onChange={(value) => {
-                          setDisabledOnly(value);
-                          if (value) setHealthyOnly(false);
-                          setPage(1);
-                        }}
-                        ariaLabel={t('auth_files.disabled_filter_only')}
-                        label={
-                          <span className={styles.filterToggleLabel}>
-                            {t('auth_files.disabled_filter_only')}
-                          </span>
-                        }
-                      />
-                    </div>
-                    <div className={styles.filterToggleCard}>
-                      <ToggleSwitch
-                        checked={healthyOnly}
-                        onChange={(value) => {
-                          setHealthyOnly(value);
-                          if (value) {
-                            setProblemOnly(false);
-                            setProblemTypeFilter('all');
-                            setDisabledOnly(false);
-                          }
-                          setPage(1);
-                        }}
-                        ariaLabel={t('auth_files.healthy_filter_only')}
-                        label={
-                          <span className={styles.filterToggleLabel}>
-                            {t('auth_files.healthy_filter_only')}
-                          </span>
-                        }
-                      />
-                    </div>
-                    <div className={styles.filterToggleCard}>
-                      <ToggleSwitch
-                        checked={compactMode}
-                        onChange={(value) => setCompactMode(value)}
-                        ariaLabel={t('auth_files.compact_mode_label')}
-                        label={
-                          <span className={styles.filterToggleLabel}>
-                            {t('auth_files.compact_mode_label')}
-                          </span>
-                        }
-                      />
-                    </div>
-                    <div className={styles.filterToggleCard}>
-                      <ToggleSwitch
-                        checked={hideErrors}
-                        onChange={(value) => setHideErrors(value)}
-                        ariaLabel={t('auth_files.hide_errors_label')}
-                        label={
-                          <span className={styles.filterToggleLabel}>
-                            {t('auth_files.hide_errors_label')}
-                          </span>
-                        }
-                      />
-                    </div>
-                  </div>
+                  <DropdownMenu
+                    ariaLabel={t('auth_files.display_options_label')}
+                    triggerLabel={t('auth_files.display_options_label')}
+                    triggerIcon={<IconSlidersHorizontal size={15} />}
+                    triggerClassName={styles.displayOptionsTrigger}
+                    items={[
+                      {
+                        key: 'display-options',
+                        label: t('auth_files.display_options_label'),
+                        content: (
+                          <div className={styles.displayOptionsMenu}>
+                            <ToggleSwitch
+                              checked={problemOnly}
+                              onChange={(value) => {
+                                setProblemOnly(value);
+                                if (value) setHealthyOnly(false);
+                                if (!value) setProblemTypeFilter('all');
+                                setPage(1);
+                              }}
+                              ariaLabel={t('auth_files.problem_filter_only')}
+                              label={t('auth_files.problem_filter_only')}
+                            />
+                            <ToggleSwitch
+                              checked={disabledOnly}
+                              onChange={(value) => {
+                                setDisabledOnly(value);
+                                if (value) setHealthyOnly(false);
+                                setPage(1);
+                              }}
+                              ariaLabel={t('auth_files.disabled_filter_only')}
+                              label={t('auth_files.disabled_filter_only')}
+                            />
+                            <ToggleSwitch
+                              checked={healthyOnly}
+                              onChange={(value) => {
+                                setHealthyOnly(value);
+                                if (value) {
+                                  setProblemOnly(false);
+                                  setProblemTypeFilter('all');
+                                  setDisabledOnly(false);
+                                }
+                                setPage(1);
+                              }}
+                              ariaLabel={t('auth_files.healthy_filter_only')}
+                              label={t('auth_files.healthy_filter_only')}
+                            />
+                            <ToggleSwitch
+                              checked={compactMode}
+                              onChange={(value) => setCompactMode(value)}
+                              ariaLabel={t('auth_files.compact_mode_label')}
+                              label={t('auth_files.compact_mode_label')}
+                            />
+                            <ToggleSwitch
+                              checked={hideErrors}
+                              onChange={(value) => setHideErrors(value)}
+                              ariaLabel={t('auth_files.hide_errors_label')}
+                              label={t('auth_files.hide_errors_label')}
+                            />
+                          </div>
+                        ),
+                      },
+                    ]}
+                  />
                 </div>
                 {problemOnly ? (
                   <div className={`${styles.filterItem} ${styles.problemTypeFilterItem}`}>

@@ -15,7 +15,6 @@ import { useNotificationStore, useQuotaStore } from '@/stores';
 import type { AntigravityQuotaState, AuthFileItem, CodexQuotaState, KiroQuotaState } from '@/types';
 import {
   getStatusFromError,
-  normalizePlanType,
   resolveCodexPlanType,
 } from '@/utils/quota';
 import { authFilesApi } from '@/services/api/authFiles';
@@ -29,8 +28,6 @@ import styles from '@/features/authFiles/AuthFilesPage.module.scss';
 
 type QuotaState = { status?: string; error?: string; errorStatus?: number } | undefined;
 const noopQuotaStateUpdater = (() => undefined) as unknown as (updater: unknown) => void;
-const PREMIUM_CODEX_PLAN_TYPES = new Set(['pro', 'prolite', 'pro-lite', 'pro_lite']);
-
 const getQuotaConfig = (type: QuotaProviderType) => {
   if (type === 'antigravity') return ANTIGRAVITY_CONFIG;
   if (type === 'claude') return CLAUDE_CONFIG;
@@ -70,19 +67,6 @@ const buildEmbeddedAntigravityQuota = (file: AuthFileItem): AntigravityQuotaStat
     groups: [],
     creditBalance
   };
-};
-
-const getCodexPlanLabel = (planType: string | null | undefined, t: TFunction): string | null => {
-  const normalized = normalizePlanType(planType);
-  if (!normalized) return null;
-  if (normalized === 'pro') return t('codex_quota.plan_pro');
-  if (PREMIUM_CODEX_PLAN_TYPES.has(normalized) && normalized !== 'pro') {
-    return t('codex_quota.plan_prolite');
-  }
-  if (normalized === 'plus') return t('codex_quota.plan_plus');
-  if (normalized === 'team') return t('codex_quota.plan_team');
-  if (normalized === 'free') return t('codex_quota.plan_free');
-  return planType || normalized;
 };
 
 const isCodexQuotaWithoutWindows = (quota: unknown): quota is CodexQuotaState => {
@@ -291,16 +275,19 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
     quotaErrorStatus,
     quotaError || t('common.unknown_error')
   );
-  const renderQuotaRefreshAction = () => (
-    <button
-      type="button"
-      className={`${styles.quotaMessage} ${styles.quotaMessageAction}`}
-      onClick={() => void refreshQuotaForFile()}
-      disabled={!canRefreshQuota}
-    >
-      {t(`${config.i18nPrefix}.idle`)}
-    </button>
-  );
+  const renderQuotaRefreshAction = () => {
+    if (!canRefreshQuota) return null;
+
+    return (
+      <button
+        type="button"
+        className={`${styles.quotaMessage} ${styles.quotaMessageAction}`}
+        onClick={() => void refreshQuotaForFile()}
+      >
+        {t(`${config.i18nPrefix}.idle`)}
+      </button>
+    );
+  };
 
   const requestKiroOverageUpdate = useCallback(
     (enabled: boolean) => {
@@ -357,22 +344,7 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
 
   const renderQuotaSuccessItems = () => {
     if (quotaType === 'codex' && isCodexQuotaWithoutWindows(quota)) {
-      const planLabel = getCodexPlanLabel(quota.planType, t);
-      const isPremiumPlan = PREMIUM_CODEX_PLAN_TYPES.has(normalizePlanType(quota.planType) ?? '');
-
-      return (
-        <>
-          {planLabel ? (
-            <div className={styles.codexPlan}>
-              <span className={styles.codexPlanLabel}>{t('codex_quota.plan_label')}</span>
-              <span className={isPremiumPlan ? styles.premiumPlanValue : styles.codexPlanValue}>
-                {planLabel}
-              </span>
-            </div>
-          ) : null}
-          {renderQuotaRefreshAction()}
-        </>
-      );
+      return renderQuotaRefreshAction();
     }
 
     if (quotaType === 'kiro' && isKiroQuotaWithoutDetails(quota)) {

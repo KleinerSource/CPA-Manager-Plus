@@ -143,7 +143,7 @@ describe('buildPastedAuthJsonPayload', () => {
     expect(result.resolvedFileName).toBe('my-work-account.json');
   });
 
-  it('derives a default codex file name for pasted session auth JSON', () => {
+  it('keeps the generated file name for pasted session auth JSON', () => {
     const result = buildPastedAuthJsonPayload(
       'session',
       'codex-account.json',
@@ -154,7 +154,7 @@ describe('buildPastedAuthJsonPayload', () => {
       })
     );
 
-    expect(result.resolvedFileName).toBe('session-user-tag-example-com.codex.json');
+    expect(result.resolvedFileName).toBe('codex-account.json');
     expect(result.authJson).toMatchObject({
       type: 'codex',
       email: 'Session.User+tag@example.com',
@@ -165,7 +165,7 @@ describe('buildPastedAuthJsonPayload', () => {
 });
 
 describe('useAuthFilesData savePastedAuthJson', () => {
-  it('saves converted session JSON with derived default file name and reloads files', async () => {
+  it('saves converted session JSON with the supplied file name and reloads files', async () => {
     const hook = mountUseAuthFilesData();
     const sessionInput = JSON.stringify({
       user: { email: 'Session.User+tag@example.com' },
@@ -175,11 +175,11 @@ describe('useAuthFilesData savePastedAuthJson', () => {
 
     const savedName = await hook
       .getCurrent()
-      .savePastedAuthJson('session', 'codex-account.json', sessionInput);
+      .savePastedAuthJson('session', '07-14-12-13-codex-account.json', sessionInput);
 
-    expect(savedName).toBe('session-user-tag-example-com.codex.json');
+    expect(savedName).toBe('07-14-12-13-codex-account.json');
     expect(mocks.saveJsonObject).toHaveBeenCalledWith(
-      'session-user-tag-example-com.codex.json',
+      '07-14-12-13-codex-account.json',
       expect.objectContaining({
         type: 'codex',
         email: 'Session.User+tag@example.com',
@@ -188,7 +188,7 @@ describe('useAuthFilesData savePastedAuthJson', () => {
       })
     );
     expect(mocks.showNotification).toHaveBeenCalledWith(
-      'auth_files.paste_success:session-user-tag-example-com.codex.json',
+      'auth_files.paste_success:07-14-12-13-codex-account.json',
       'success'
     );
     expect(mocks.list).toHaveBeenCalledTimes(1);

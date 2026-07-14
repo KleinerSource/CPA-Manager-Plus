@@ -8,19 +8,22 @@ import { SelectionCheckbox } from '@/components/ui/SelectionCheckbox';
 import { Select } from '@/components/ui/Select';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import {
-  IconCheck,
   IconChevronDown,
   IconChevronUp,
+  IconPencil,
   IconSlidersHorizontal,
+  IconTrash2,
   IconX,
 } from '@/components/ui/icons';
 import iconOpenaiLight from '@/assets/icons/openai-light.svg';
 import iconOpenaiDark from '@/assets/icons/openai-dark.svg';
 import type { OpenAIProviderConfig } from '@/types';
-import { maskApiKey } from '@/utils/format';
 import { statusBarDataFromRecentRequests } from '@/utils/recentRequests';
 import styles from '@/features/aiProviders/AiProvidersPage.module.scss';
 import { ProviderStatusBar } from '../ProviderStatusBar';
+import { ModelTagList } from '../ModelTagList';
+import { ProviderCardTitle } from '../ProviderCardTitle';
+import { ProviderApiKeyEntries } from '../ProviderApiKeyEntries';
 import { usePageTransitionLayer } from '@/components/common/PageTransitionLayer';
 import {
   getOpenAIProviderRecentStatusData,
@@ -485,17 +488,16 @@ export function OpenAISection({
     return (
       <div
         key={`openai-provider-${originalIndex}`}
-        className={styles.openaiProviderCard}
+        className={`${styles.openaiProviderCard} ${providerDisabled ? styles.providerCardDisabled : ''}`}
         style={actionsDisabled ? { opacity: 0.6 } : undefined}
       >
         <div className={styles.openaiProviderMeta}>
-          <div className={styles.openaiProviderTitle}>{provider.name}</div>
-          {provider.priority !== undefined && (
-            <div className={styles.fieldRow}>
-              <span className={styles.fieldLabel}>{t('common.priority')}:</span>
-              <span className={styles.fieldValue}>{provider.priority}</span>
-            </div>
-          )}
+          <ProviderCardTitle
+            title={provider.name}
+            disabled={providerDisabled}
+            success={stats.success}
+            failure={stats.failure}
+          />
           {provider.prefix && (
             <div className={styles.fieldRow}>
               <span className={styles.fieldLabel}>{t('common.prefix')}:</span>
@@ -506,11 +508,6 @@ export function OpenAISection({
             <span className={styles.fieldLabel}>{t('common.base_url')}:</span>
             <span className={styles.fieldValue}>{provider.baseUrl}</span>
           </div>
-          {providerDisabled && (
-            <div className="status-badge warning" style={{ marginTop: 8, marginBottom: 0 }}>
-              {t('ai_providers.config_disabled_badge')}
-            </div>
-          )}
           {headerEntries.length > 0 && (
             <div className={styles.headerBadgeList}>
               {headerEntries.map(([key, value]) => (
@@ -521,94 +518,68 @@ export function OpenAISection({
             </div>
           )}
           {apiKeyEntries.length > 0 && (
-            <div className={styles.apiKeyEntriesSection}>
-              <div className={styles.apiKeyEntriesLabel}>
-                {t('ai_providers.openai_keys_count')}: {apiKeyEntries.length}
-              </div>
-              <div className={styles.apiKeyEntryList}>
-                {apiKeyEntries.map((entry, entryIndex) => {
-                  const entryStats = getProviderTotalStats(
-                    usageByProvider,
-                    provider.name,
-                    entry.apiKey,
-                    provider.baseUrl
-                  );
-                  return (
-                    <div
-                      key={getApiKeyEntryRenderKey(entry, entryIndex)}
-                      className={styles.apiKeyEntryCard}
-                    >
-                      <span className={styles.apiKeyEntryIndex}>{entryIndex + 1}</span>
-                      <span className={styles.apiKeyEntryKey}>{maskApiKey(entry.apiKey)}</span>
-                      {entry.proxyUrl && (
-                        <span className={styles.apiKeyEntryProxy}>{entry.proxyUrl}</span>
-                      )}
-                      <div className={styles.apiKeyEntryStats}>
-                        <span
-                          className={`${styles.apiKeyEntryStat} ${styles.apiKeyEntryStatSuccess}`}
-                        >
-                          <IconCheck size={12} /> {entryStats.success}
-                        </span>
-                        <span
-                          className={`${styles.apiKeyEntryStat} ${styles.apiKeyEntryStatFailure}`}
-                        >
-                          <IconX size={12} /> {entryStats.failure}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <ProviderApiKeyEntries
+              entries={apiKeyEntries.map((entry, entryIndex) => {
+                const entryStats = getProviderTotalStats(
+                  usageByProvider,
+                  provider.name,
+                  entry.apiKey,
+                  provider.baseUrl
+                );
+                return {
+                  key: getApiKeyEntryRenderKey(entry, entryIndex),
+                  apiKey: entry.apiKey,
+                  proxyUrl: entry.proxyUrl,
+                  ...entryStats,
+                };
+              })}
+              countLabel={t('ai_providers.openai_keys_count')}
+            />
           )}
-          <div className={styles.fieldRow} style={{ marginTop: '8px' }}>
-            <span className={styles.fieldLabel}>{t('ai_providers.openai_models_count')}:</span>
-            <span className={styles.fieldValue}>{provider.models?.length || 0}</span>
-          </div>
-          {provider.models?.length ? (
-            <div className={styles.modelTagList}>
-              {provider.models.map((model) => (
-                <span key={model.name} className={styles.modelTag}>
-                  <span className={styles.modelName}>{model.name}</span>
-                  {model.alias && model.alias !== model.name && (
-                    <span className={styles.modelAlias}>{model.alias}</span>
-                  )}
-                </span>
-              ))}
-            </div>
-          ) : null}
+          <ModelTagList
+            models={provider.models ?? []}
+            countLabel={t('ai_providers.openai_models_count')}
+          />
           {provider.testModel && (
             <div className={styles.fieldRow}>
               <span className={styles.fieldLabel}>{t('ai_providers.openai_test_model')}:</span>
               <span className={styles.fieldValue}>{provider.testModel}</span>
             </div>
           )}
-          <div className={styles.cardStats}>
-            <span className={`${styles.statPill} ${styles.statSuccess}`}>
-              {t('stats.success')}: {stats.success}
-            </span>
-            <span className={`${styles.statPill} ${styles.statFailure}`}>
-              {t('stats.failure')}: {stats.failure}
-            </span>
-          </div>
           <ProviderStatusBar statusData={statusData} />
         </div>
         <div className={styles.openaiProviderActions}>
+          {provider.priority !== undefined && (
+            <div className={styles.providerActionPriority}>
+              <span className={styles.providerPriorityBadge}>
+                <span className={styles.providerPriorityLabel}>{t('common.priority')}</span>
+                <span className={styles.providerPriorityValue}>{provider.priority}</span>
+              </span>
+            </div>
+          )}
           <Button
             variant="secondary"
             size="sm"
+            iconOnly
             onClick={() => onEdit(originalIndex)}
             disabled={actionsDisabled}
+            className={styles.providerActionIconButton}
+            title={t('common.edit')}
+            aria-label={t('common.edit')}
           >
-            {t('common.edit')}
+            <IconPencil size={16} />
           </Button>
           <Button
             variant="danger"
             size="sm"
+            iconOnly
             onClick={() => onDelete(originalIndex)}
             disabled={actionsDisabled}
+            className={styles.providerActionIconButton}
+            title={t('common.delete')}
+            aria-label={t('common.delete')}
           >
-            {t('common.delete')}
+            <IconTrash2 size={16} />
           </Button>
           <ToggleSwitch
             label={t('ai_providers.config_toggle_label')}

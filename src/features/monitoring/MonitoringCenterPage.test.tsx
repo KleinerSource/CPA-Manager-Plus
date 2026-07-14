@@ -92,7 +92,7 @@ const createAuthState = (overrides: MonitoringAccountAuthState): MonitoringAccou
   overrides;
 
 describe('MonitoringCenterPage summary cards', () => {
-  it('renders all request monitoring summary metrics in one ordered grid with large values intact', () => {
+  it('renders all request monitoring summary metrics in grouped grids with large values intact', () => {
     const summary: MonitoringSummary = {
       totalCalls: 25_500,
       successCalls: 23_600,
@@ -480,7 +480,7 @@ describe('MonitoringCenterPage account card', () => {
 
     expect(html).toContain('gpt-5.5');
     expect(html).toContain('<small>Calls</small><strong>196</strong>');
-    expect(html).toContain('<small>Success</small><strong class="_goodText');
+    expect(html).toContain('<small>Success</small><strong class="_rate90Text');
     expect(html).toContain('<small>Total Tokens</small><strong>33.5M</strong>');
     expect(html).toContain('<small>Total Cost</small><strong>$23.04</strong>');
     expect(html).not.toContain('<table');

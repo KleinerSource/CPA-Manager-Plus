@@ -2,6 +2,7 @@ import type { ApiKeyAlias } from '@/services/api/usageService';
 import type { AuthFileItem } from '@/types/authFile';
 import type { Config } from '@/types/config';
 import type { ModelPrice } from '@/utils/usage';
+import type { MonitoringSuccessRateTone } from './successRateTone';
 
 export type MonitoringChannelMeta = {
   key: string;
@@ -33,7 +34,7 @@ export type MonitoringCustomTimeRange = {
   endMs: number;
 };
 
-export type MonitoringStatusTone = 'good' | 'warn' | 'bad';
+export type MonitoringStatusTone = 'good' | 'warn' | 'bad' | MonitoringSuccessRateTone;
 
 export type MonitoringStatusChip = {
   key: string;

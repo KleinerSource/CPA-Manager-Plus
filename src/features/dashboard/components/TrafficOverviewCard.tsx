@@ -54,12 +54,17 @@ const tokenColorMap: Record<string, string> = {
 
 const visibleTokenMixKeys = new Set(['input', 'output', 'reasoning', 'cached']);
 
-const healthToneClassMap: Record<string, string> = {
-  future: 'healthFuture',
-  empty: 'healthEmpty',
-  good: 'healthGood',
-  warn: 'healthWarn',
-  bad: 'healthBad',
+const getHealthRateClassName = (successRate: number, calls: number) => {
+  if (calls === 0) return 'healthEmpty';
+  if (successRate >= 0.9) return 'healthRate90';
+  if (successRate >= 0.75) return 'healthRate75';
+  if (successRate >= 0.5) return 'healthRate50';
+  return 'healthRate25';
+};
+
+const getHealthToneClassName = (point: DashboardTodayRequestHealthTimelinePoint) => {
+  if (point.future) return 'healthFuture';
+  return getHealthRateClassName(point.success_rate, point.calls);
 };
 
 const formatPercent = (value: number | undefined, digits = 1) => {
@@ -113,6 +118,12 @@ export function TrafficOverviewCard({
       )
     : [];
   const hourLabelIndexes = [0, 6, 12, 18, 23];
+  const healthSummaryClassName = todayRequestHealthTimeline
+    ? getHealthRateClassName(
+        todayRequestHealthTimeline.success_rate,
+        todayRequestHealthTimeline.total_calls
+      )
+    : 'healthEmpty';
 
   return (
     <div className={styles.chartsGrid}>
@@ -195,14 +206,16 @@ export function TrafficOverviewCard({
             <p>{t('dashboard.request_health_timeline_desc')}</p>
           </div>
           <div className={styles.healthSummary}>
-            <strong>{todayRequestHealthTimeline ? formatPercent(todayRequestHealthTimeline.success_rate) : '-'}</strong>
+            <strong className={styles[healthSummaryClassName]}>
+              {todayRequestHealthTimeline ? formatPercent(todayRequestHealthTimeline.success_rate) : '-'}
+            </strong>
             <div className={styles.healthCounts}>
               <span>
-                <i className={styles.healthGood} />{' '}
+                <i className={styles.healthRate90} />{' '}
                 {formatCompactNumber(todayRequestHealthTimeline?.success_calls ?? 0)}
               </span>
               <span>
-                <i className={styles.healthBad} />{' '}
+                <i className={styles.healthRate25} />{' '}
                 {formatCompactNumber(todayRequestHealthTimeline?.failure_calls ?? 0)}
               </span>
             </div>
@@ -231,7 +244,7 @@ export function TrafficOverviewCard({
                   point ? (
                     <div
                       key={point.bucket_ms}
-                      className={`${styles.healthCell} ${styles[healthToneClassMap[point.tone] ?? 'healthEmpty']}`}
+                      className={`${styles.healthCell} ${styles[getHealthToneClassName(point)]}`}
                       style={{ '--cell-intensity': point.intensity } as HealthCellStyle}
                       title={buildHealthTitle(point, i18n.language, t)}
                     />
@@ -254,9 +267,10 @@ export function TrafficOverviewCard({
         </div>
         <div className={styles.healthLegend}>
           <span><i className={styles.healthEmpty} /> {t('dashboard.request_health_no_request')}</span>
-          <span><i className={styles.healthGood} /> {t('dashboard.request_health_success')}</span>
-          <span><i className={styles.healthWarn} /> {t('dashboard.request_health_warning')}</span>
-          <span><i className={styles.healthBad} /> {t('dashboard.request_health_failure')}</span>
+          <span><i className={styles.healthRate90} /> {t('dashboard.request_health_rate_90')}</span>
+          <span><i className={styles.healthRate75} /> {t('dashboard.request_health_rate_75')}</span>
+          <span><i className={styles.healthRate50} /> {t('dashboard.request_health_rate_50')}</span>
+          <span><i className={styles.healthRate25} /> {t('dashboard.request_health_rate_25')}</span>
           <span><i className={styles.healthFuture} /> {t('dashboard.request_health_future')}</span>
         </div>
       </section>

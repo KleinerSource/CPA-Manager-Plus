@@ -102,6 +102,13 @@ const PROBLEM_TYPE_FILTER_SET = new Set<AuthFilesProblemTypeFilter>(
 export const compareAuthFileName = (left: { name: string }, right: { name: string }) =>
   left.name.localeCompare(right.name, undefined, { numeric: true, sensitivity: 'base' });
 
+export const compareAuthFileDisabledLast = (left: AuthFileItem, right: AuthFileItem) => {
+  const leftDisabled = left.disabled === true;
+  const rightDisabled = right.disabled === true;
+  if (leftDisabled === rightDisabled) return 0;
+  return leftDisabled ? 1 : -1;
+};
+
 const normalizeNumber = (value: unknown): number | null => {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
   if (typeof value !== 'string') return null;
