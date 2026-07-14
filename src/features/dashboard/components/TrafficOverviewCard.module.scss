@@ -258,6 +258,31 @@
     font-size: 13px;
     font-weight: 800;
     line-height: 1;
+
+    &.healthEmpty {
+      background: color-mix(in srgb, var(--app-surface-muted), #111827 12%);
+      color: var(--text-tertiary);
+    }
+
+    &.healthRate90 {
+      background: rgba(34, 197, 94, 0.16);
+      color: #22c55e;
+    }
+
+    &.healthRate75 {
+      background: rgba(132, 204, 22, 0.16);
+      color: #84cc16;
+    }
+
+    &.healthRate50 {
+      background: rgba(234, 179, 8, 0.16);
+      color: #eab308;
+    }
+
+    &.healthRate25 {
+      background: rgba(239, 68, 68, 0.16);
+      color: #ef4444;
+    }
   }
 }
 
@@ -339,9 +364,10 @@
 }
 
 .healthEmpty,
-.healthBad,
-.healthWarn,
-.healthGood,
+.healthRate90,
+.healthRate75,
+.healthRate50,
+.healthRate25,
 .healthFuture {
   display: inline-block;
 }
@@ -350,15 +376,19 @@
   background: color-mix(in srgb, var(--app-surface-muted), #111827 12%);
 }
 
-.healthGood {
+.healthRate90 {
   background: #22c55e;
 }
 
-.healthWarn {
-  background: #a3e635;
+.healthRate75 {
+  background: #84cc16;
 }
 
-.healthBad {
+.healthRate50 {
+  background: #eab308;
+}
+
+.healthRate25 {
   background: #ef4444;
 }
 

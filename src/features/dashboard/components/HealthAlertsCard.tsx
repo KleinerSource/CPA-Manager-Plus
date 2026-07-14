@@ -23,6 +23,14 @@ interface HealthAlertsCardProps {
   apiKeyAliasMap: Map<string, string>;
 }
 
+const getChannelHealthToneClassName = (channel: DashboardChannelHealth) => {
+  if (channel.calls === 0) return '';
+  if (channel.success_rate >= 0.9) return 'rate90';
+  if (channel.success_rate >= 0.75) return 'rate75';
+  if (channel.success_rate >= 0.5) return 'rate50';
+  return 'rate25';
+};
+
 export function HealthAlertsCard({
   loading,
   recentFailures,
@@ -147,7 +155,9 @@ export function HealthAlertsCard({
 
             return (
               <div key={key} className={styles.listItem}>
-                <span className={`${styles.statusDot} ${styles[channel.tone] || ''}`} />
+                <span
+                  className={`${styles.statusDot} ${styles[getChannelHealthToneClassName(channel)] || ''}`}
+                />
                 <span
                   className={styles.label}
                   title={channel.auth_index === '-' ? undefined : display.title}

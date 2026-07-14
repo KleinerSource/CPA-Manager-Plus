@@ -473,7 +473,6 @@
 
   &:hover:not(:disabled) {
     background: color-mix(in srgb, var(--text-primary) 10%, transparent);
-    transform: scale(1.08);
   }
 
   &:active:not(:disabled) {

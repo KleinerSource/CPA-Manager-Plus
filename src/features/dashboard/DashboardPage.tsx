@@ -95,7 +95,6 @@ export function DashboardPage() {
   const [collectorError, setCollectorError] = useState('');
   const [errorLogs, setErrorLogs] = useState<ErrorLogFile[]>([]);
   const [errorLogsLoading, setErrorLogsLoading] = useState(false);
-  const [currentServiceBase, setCurrentServiceBase] = useState('');
   const [displayMeta, setDisplayMeta] = useState<DashboardDisplayMeta>({
     authFiles: [],
     channels: [],
@@ -257,7 +256,6 @@ export function DashboardPage() {
       setCollectorLoading(false);
       setErrorLogs([]);
       setErrorLogsLoading(false);
-      setCurrentServiceBase('');
       setDisplayMeta({ authFiles: [], channels: [], apiKeyAliases: [] });
       return;
     }
@@ -290,8 +288,6 @@ export function DashboardPage() {
     }
     setErrorLogsLoading(false);
 
-    setCurrentServiceBase(apiBase || usageServiceBase || '');
-
     setDisplayMeta((current) => ({
       authFiles: metaResult.status === 'fulfilled' ? metaResult.value.authFiles : current.authFiles,
       channels: metaResult.status === 'fulfilled' ? metaResult.value.channels : current.channels,
@@ -300,7 +296,7 @@ export function DashboardPage() {
           ? aliasesResult.value.items
           : current.apiKeyAliases,
     }));
-  }, [apiBase, config, managementKey, usageEnabled, usageServiceBase]);
+  }, [config, managementKey, usageEnabled, usageServiceBase]);
 
   const refreshDashboard = useCallback(async () => {
     setCurrentTime(new Date());
@@ -476,7 +472,6 @@ export function DashboardPage() {
         <VersionCard
           appVersion={__APP_VERSION__ || t('dashboard.version_unknown')}
           apiVersion={serverVersion || t('dashboard.version_unknown')}
-          cpaBase={currentServiceBase || apiBase || ''}
           serverBuildDate={serverBuildDate || undefined}
           connectionStatus={connectionStatus}
           refreshSignal={cardRefreshSignal}

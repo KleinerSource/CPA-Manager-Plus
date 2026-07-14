@@ -5,11 +5,13 @@ import { Card } from '@/components/ui/Card';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import iconVertex from '@/assets/icons/vertex.svg';
 import type { ProviderKeyConfig } from '@/types';
-import { maskApiKey } from '@/utils/format';
 import { statusBarDataFromRecentRequests } from '@/utils/recentRequests';
 import styles from '@/features/aiProviders/AiProvidersPage.module.scss';
 import { ProviderList } from '../ProviderList';
 import { ProviderStatusBar } from '../ProviderStatusBar';
+import { ModelTagList } from '../ModelTagList';
+import { ProviderCardTitle } from '../ProviderCardTitle';
+import { ProviderApiKeyEntries } from '../ProviderApiKeyEntries';
 import {
   getProviderConfigKey,
   getProviderRecentBuckets,
@@ -87,6 +89,8 @@ export function VertexSection({
           onDelete={(_, index) => onDelete(index)}
           actionsDisabled={actionsDisabled}
           getRowDisabled={(item) => hasDisableAllModelsRule(item.excludedModels)}
+          listClassName={styles.openaiProviderList}
+          actionButtonClassName={styles.providerActionIconButton}
           renderExtraActions={(item, index) => (
             <ToggleSwitch
               label={t('ai_providers.config_toggle_label')}
@@ -111,13 +115,12 @@ export function VertexSection({
 
             return (
               <Fragment>
-                <div className="item-title">
-                  {t('ai_providers.vertex_item_title')} #{index + 1}
-                </div>
-                <div className={styles.fieldRow}>
-                  <span className={styles.fieldLabel}>{t('common.api_key')}:</span>
-                  <span className={styles.fieldValue}>{maskApiKey(item.apiKey)}</span>
-                </div>
+                <ProviderCardTitle
+                  title={`${t('ai_providers.vertex_item_title')} #${index + 1}`}
+                  disabled={configDisabled}
+                  success={stats.success}
+                  failure={stats.failure}
+                />
                 {item.prefix && (
                   <div className={styles.fieldRow}>
                     <span className={styles.fieldLabel}>{t('common.prefix')}:</span>
@@ -130,12 +133,6 @@ export function VertexSection({
                     <span className={styles.fieldValue}>{item.baseUrl}</span>
                   </div>
                 )}
-                {item.proxyUrl && (
-                  <div className={styles.fieldRow}>
-                    <span className={styles.fieldLabel}>{t('common.proxy_url')}:</span>
-                    <span className={styles.fieldValue}>{item.proxyUrl}</span>
-                  </div>
-                )}
                 {headerEntries.length > 0 && (
                   <div className={styles.headerBadgeList}>
                     {headerEntries.map(([key, value]) => (
@@ -145,25 +142,22 @@ export function VertexSection({
                     ))}
                   </div>
                 )}
-                {configDisabled && (
-                  <div className="status-badge warning" style={{ marginTop: 8, marginBottom: 0 }}>
-                    {t('ai_providers.config_disabled_badge')}
-                  </div>
-                )}
+                <ProviderApiKeyEntries
+                  entries={[
+                    {
+                      apiKey: item.apiKey,
+                      proxyUrl: item.proxyUrl,
+                      success: stats.success,
+                      failure: stats.failure,
+                    },
+                  ]}
+                  countLabel={t('ai_providers.openai_keys_count')}
+                />
                 {item.models?.length ? (
-                  <div className={styles.modelTagList}>
-                    <span className={styles.modelCountLabel}>
-                      {t('ai_providers.vertex_models_count')}: {item.models.length}
-                    </span>
-                    {item.models.map((model) => (
-                      <span key={`${model.name}-${model.alias || 'default'}`} className={styles.modelTag}>
-                        <span className={styles.modelName}>{model.name}</span>
-                        {model.alias && (
-                          <span className={styles.modelAlias}>{model.alias}</span>
-                        )}
-                      </span>
-                    ))}
-                  </div>
+                  <ModelTagList
+                    models={item.models}
+                    countLabel={t('ai_providers.vertex_models_count')}
+                  />
                 ) : null}
                 {excludedModels.length ? (
                   <div className={styles.excludedModelsSection}>
@@ -179,14 +173,6 @@ export function VertexSection({
                     </div>
                   </div>
                 ) : null}
-                <div className={styles.cardStats}>
-                  <span className={`${styles.statPill} ${styles.statSuccess}`}>
-                    {t('stats.success')}: {stats.success}
-                  </span>
-                  <span className={`${styles.statPill} ${styles.statFailure}`}>
-                    {t('stats.failure')}: {stats.failure}
-                  </span>
-                </div>
                 <ProviderStatusBar statusData={statusData} />
               </Fragment>
             );

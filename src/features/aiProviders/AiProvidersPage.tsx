@@ -410,17 +410,18 @@ export function AiProvidersPage() {
       <div className={styles.content}>
         {error && <div className="error-box">{error}</div>}
 
-        <div id="provider-gemini">
-          <GeminiSection
-            configs={geminiKeys}
+        <div id="provider-openai">
+          <OpenAISection
+            configs={openaiProviders}
             usageByProvider={usageByProvider}
             loading={loading}
             disableControls={disableControls}
             isSwitching={isSwitching}
-            onAdd={() => openEditor('/ai-providers/gemini/new')}
-            onEdit={(index) => openEditor(`/ai-providers/gemini/${index}`)}
-            onDelete={deleteGemini}
-            onToggle={(index, enabled) => void setConfigEnabled('gemini', index, enabled)}
+            resolvedTheme={resolvedTheme}
+            onAdd={() => openEditor('/ai-providers/openai/new')}
+            onEdit={(index) => openEditor(`/ai-providers/openai/${index}`)}
+            onDelete={deleteOpenai}
+            onToggle={(index, enabled) => void setOpenAIProviderEnabled(index, enabled)}
           />
         </div>
 
@@ -476,18 +477,17 @@ export function AiProvidersPage() {
           />
         </div>
 
-        <div id="provider-openai">
-          <OpenAISection
-            configs={openaiProviders}
+        <div id="provider-gemini">
+          <GeminiSection
+            configs={geminiKeys}
             usageByProvider={usageByProvider}
             loading={loading}
             disableControls={disableControls}
             isSwitching={isSwitching}
-            resolvedTheme={resolvedTheme}
-            onAdd={() => openEditor('/ai-providers/openai/new')}
-            onEdit={(index) => openEditor(`/ai-providers/openai/${index}`)}
-            onDelete={deleteOpenai}
-            onToggle={(index, enabled) => void setOpenAIProviderEnabled(index, enabled)}
+            onAdd={() => openEditor('/ai-providers/gemini/new')}
+            onEdit={(index) => openEditor(`/ai-providers/gemini/${index}`)}
+            onDelete={deleteGemini}
+            onToggle={(index, enabled) => void setConfigEnabled('gemini', index, enabled)}
           />
         </div>
       </div>

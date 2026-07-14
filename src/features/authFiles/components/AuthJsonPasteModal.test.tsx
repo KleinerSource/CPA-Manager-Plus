@@ -1,9 +1,10 @@
 import { act, type ReactNode } from 'react';
 import { create, type ReactTestRenderer } from 'react-test-renderer';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { createDefaultAuthFileName } from '@/features/authFiles/authFileName';
 import { AuthJsonPasteModal } from './AuthJsonPasteModal';
 
 vi.mock('react-i18next', () => ({
@@ -94,6 +95,23 @@ type ModalHarness = {
 describe('AuthJsonPasteModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('generates a timestamped default file name', () => {
+    const date = new Date(2026, 6, 14, 12, 13);
+
+    expect(createDefaultAuthFileName(date)).toBe('07-14-12-13-codex-account.json');
+
+    vi.useFakeTimers({ now: date });
+    const modal = mountModal(vi.fn().mockResolvedValue(undefined));
+    expect(modal.renderer.root.findByType(Input).props.value).toBe(
+      '07-14-12-13-codex-account.json'
+    );
+    modal.renderer.unmount();
   });
 
   it('rejects invalid file names without calling save', async () => {

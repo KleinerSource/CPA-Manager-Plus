@@ -50,7 +50,6 @@ button:disabled {
 
     &:hover {
       background: var(--primary-hover);
-      transform: translateY(-1px);
       border-color: var(--primary-hover);
       box-shadow: 0 10px 22px -14px color-mix(in srgb, var(--primary-color) 76%, transparent);
     }
@@ -625,7 +624,6 @@ textarea {
   &:hover {
     color: var(--text-primary);
     background: var(--surface-subtle-hover);
-    transform: scale(1.1);
   }
 
   &:active {

@@ -37,6 +37,7 @@ import { useNotificationStore } from '@/stores';
 import { copyToClipboard } from '@/utils/clipboard';
 import { maskSensitiveText, truncateText } from '@/utils/format';
 import { formatCompactNumber, formatUsd } from '@/utils/usage';
+import { getMonitoringSuccessRateTone } from '../model/successRateTone';
 import styles from '../MonitoringCenterPage.module.scss';
 
 type RealtimeLogRow = MonitoringEventRow & {
@@ -839,11 +840,7 @@ export function RealtimeEventsPanel({
                       key={key}
                       className={[
                         key === 'successRate'
-                          ? row.successRate >= 0.95
-                            ? styles.goodText
-                            : row.successRate >= 0.85
-                              ? styles.warnText
-                              : styles.badText
+                          ? styles[`${getMonitoringSuccessRateTone(row.successRate)}Text`]
                           : '',
                         key === 'tps' ? styles.realtimeTpsColumn : '',
                         key === 'latency' ? styles.realtimeLatencyColumn : '',

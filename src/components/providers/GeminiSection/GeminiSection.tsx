@@ -5,11 +5,13 @@ import { Card } from '@/components/ui/Card';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import iconGemini from '@/assets/icons/gemini.svg';
 import type { GeminiKeyConfig } from '@/types';
-import { maskApiKey } from '@/utils/format';
 import { statusBarDataFromRecentRequests } from '@/utils/recentRequests';
 import styles from '@/features/aiProviders/AiProvidersPage.module.scss';
 import { ProviderList } from '../ProviderList';
 import { ProviderStatusBar } from '../ProviderStatusBar';
+import { ModelTagList } from '../ModelTagList';
+import { ProviderCardTitle } from '../ProviderCardTitle';
+import { ProviderApiKeyEntries } from '../ProviderApiKeyEntries';
 import {
   getProviderConfigKey,
   getProviderRecentBuckets,
@@ -87,6 +89,18 @@ export function GeminiSection({
           onDelete={(_, index) => onDelete(index)}
           actionsDisabled={actionsDisabled}
           getRowDisabled={(item) => hasDisableAllModelsRule(item.excludedModels)}
+          listClassName={styles.openaiProviderList}
+          actionButtonClassName={styles.providerActionIconButton}
+          renderPriority={(item) =>
+            item.priority !== undefined ? (
+              <div className={styles.providerActionPriority}>
+                <span className={styles.providerPriorityBadge}>
+                  <span className={styles.providerPriorityLabel}>{t('common.priority')}</span>
+                  <span className={styles.providerPriorityValue}>{item.priority}</span>
+                </span>
+              </div>
+            ) : null
+          }
           renderExtraActions={(item, index) => (
             <ToggleSwitch
               label={t('ai_providers.config_toggle_label')}
@@ -111,19 +125,12 @@ export function GeminiSection({
 
             return (
               <Fragment>
-                <div className="item-title">
-                  {t('ai_providers.gemini_item_title')} #{index + 1}
-                </div>
-                <div className={styles.fieldRow}>
-                  <span className={styles.fieldLabel}>{t('common.api_key')}:</span>
-                  <span className={styles.fieldValue}>{maskApiKey(item.apiKey)}</span>
-                </div>
-                {item.priority !== undefined && (
-                  <div className={styles.fieldRow}>
-                    <span className={styles.fieldLabel}>{t('common.priority')}:</span>
-                    <span className={styles.fieldValue}>{item.priority}</span>
-                  </div>
-                )}
+                <ProviderCardTitle
+                  title={`${t('ai_providers.gemini_item_title')} #${index + 1}`}
+                  disabled={configDisabled}
+                  success={stats.success}
+                  failure={stats.failure}
+                />
                 {item.prefix && (
                   <div className={styles.fieldRow}>
                     <span className={styles.fieldLabel}>{t('common.prefix')}:</span>
@@ -136,12 +143,6 @@ export function GeminiSection({
                     <span className={styles.fieldValue}>{item.baseUrl}</span>
                   </div>
                 )}
-                {item.proxyUrl && (
-                  <div className={styles.fieldRow}>
-                    <span className={styles.fieldLabel}>{t('common.proxy_url')}:</span>
-                    <span className={styles.fieldValue}>{item.proxyUrl}</span>
-                  </div>
-                )}
                 {headerEntries.length > 0 && (
                   <div className={styles.headerBadgeList}>
                     {headerEntries.map(([key, value]) => (
@@ -151,25 +152,22 @@ export function GeminiSection({
                     ))}
                   </div>
                 )}
-                {configDisabled && (
-                  <div className="status-badge warning" style={{ marginTop: 8, marginBottom: 0 }}>
-                    {t('ai_providers.config_disabled_badge')}
-                  </div>
-                )}
+                <ProviderApiKeyEntries
+                  entries={[
+                    {
+                      apiKey: item.apiKey,
+                      proxyUrl: item.proxyUrl,
+                      success: stats.success,
+                      failure: stats.failure,
+                    },
+                  ]}
+                  countLabel={t('ai_providers.openai_keys_count')}
+                />
                 {item.models?.length ? (
-                  <div className={styles.modelTagList}>
-                    <span className={styles.modelCountLabel}>
-                      {t('ai_providers.gemini_models_count')}: {item.models.length}
-                    </span>
-                    {item.models.map((model) => (
-                      <span key={model.name} className={styles.modelTag}>
-                        <span className={styles.modelName}>{model.name}</span>
-                        {model.alias && model.alias !== model.name && (
-                          <span className={styles.modelAlias}>{model.alias}</span>
-                        )}
-                      </span>
-                    ))}
-                  </div>
+                  <ModelTagList
+                    models={item.models}
+                    countLabel={t('ai_providers.gemini_models_count')}
+                  />
                 ) : null}
                 {excludedModels.length ? (
                   <div className={styles.excludedModelsSection}>
@@ -185,14 +183,6 @@ export function GeminiSection({
                     </div>
                   </div>
                 ) : null}
-                <div className={styles.cardStats}>
-                  <span className={`${styles.statPill} ${styles.statSuccess}`}>
-                    {t('stats.success')}: {stats.success}
-                  </span>
-                  <span className={`${styles.statPill} ${styles.statFailure}`}>
-                    {t('stats.failure')}: {stats.failure}
-                  </span>
-                </div>
                 <ProviderStatusBar statusData={statusData} />
               </Fragment>
             );

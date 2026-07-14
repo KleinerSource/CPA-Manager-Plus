@@ -8,7 +8,6 @@ import { Modal } from '@/components/ui/Modal';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import {
   IconCheck,
-  IconExternalLink,
   IconInfo,
   IconRefreshCw,
   IconSatellite,
@@ -26,7 +25,6 @@ import styles from './VersionCard.module.scss';
 interface VersionCardProps {
   appVersion: string;
   apiVersion: string;
-  cpaBase: string;
   serverBuildDate?: string;
   connectionStatus: ConnectionStatus;
   refreshSignal?: number;
@@ -77,7 +75,6 @@ const renderBadge = (
 export function VersionCard({
   appVersion,
   apiVersion,
-  cpaBase,
   serverBuildDate,
   connectionStatus,
   refreshSignal,
@@ -474,13 +471,6 @@ export function VersionCard({
             </div>
           </div>
 
-          <div className={styles.item}>
-            <div className={styles.icon}><IconExternalLink size={18} /></div>
-            <div className={styles.content}>
-              <div className={styles.label}>{t('dashboard.cpa_base')}</div>
-              <div className={styles.value}>{cpaBase || '-'}</div>
-            </div>
-          </div>
         </div>
       </section>
 

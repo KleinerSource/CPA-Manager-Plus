@@ -9,7 +9,6 @@ import { MAX_AUTH_FILE_SIZE } from '@/utils/constants';
 import { downloadBlob } from '@/utils/download';
 import {
   convertAuthJsonInput,
-  getDefaultSessionAuthFileName,
   type AuthJsonInputType,
 } from '@/features/authFiles/sessionAuthConverter';
 import {
@@ -50,6 +49,7 @@ export type UseAuthFilesDataResult = {
   fileInputRef: RefObject<HTMLInputElement | null>;
   loadFiles: (options?: { throwOnError?: boolean }) => Promise<void>;
   handleUploadClick: () => void;
+  handleFiles: (fileList: FileList | File[]) => Promise<void>;
   handleFileChange: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
   savePastedAuthJson: (
     type: AuthJsonInputType,
@@ -82,13 +82,9 @@ export const buildPastedAuthJsonPayload = (
   jsonText: string
 ): PastedAuthJsonPayload => {
   const authJson = convertAuthJsonInput(jsonText, type);
-  const resolvedFileName =
-    type === 'session' && fileName === 'codex-account.json'
-      ? getDefaultSessionAuthFileName(authJson)
-      : fileName;
   return {
     authJson,
-    resolvedFileName,
+    resolvedFileName: fileName,
   };
 };
 
@@ -224,10 +220,9 @@ export function useAuthFilesData(): UseAuthFilesDataResult {
     fileInputRef.current?.click();
   }, []);
 
-  const handleFileChange = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      const fileList = event.target.files;
-      if (!fileList || fileList.length === 0) return;
+  const handleFiles = useCallback(
+    async (fileList: FileList | File[]) => {
+      if (fileList.length === 0) return;
 
       const filesToUpload = Array.from(fileList);
       const validFiles: File[] = [];
@@ -257,7 +252,6 @@ export function useAuthFilesData(): UseAuthFilesDataResult {
       }
 
       if (validFiles.length === 0) {
-        event.target.value = '';
         return;
       }
 
@@ -284,10 +278,23 @@ export function useAuthFilesData(): UseAuthFilesDataResult {
         showNotification(`${t('notification.upload_failed')}: ${errorMessage}`, 'error');
       } finally {
         setUploading(false);
-        event.target.value = '';
       }
     },
     [loadFiles, showNotification, t]
+  );
+
+  const handleFileChange = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const fileList = event.target.files;
+      if (!fileList || fileList.length === 0) return;
+
+      try {
+        await handleFiles(fileList);
+      } finally {
+        event.target.value = '';
+      }
+    },
+    [handleFiles]
   );
 
   const savePastedAuthJson = useCallback(
@@ -825,6 +832,7 @@ export function useAuthFilesData(): UseAuthFilesDataResult {
     fileInputRef,
     loadFiles,
     handleUploadClick,
+    handleFiles,
     handleFileChange,
     savePastedAuthJson,
     handleDelete,

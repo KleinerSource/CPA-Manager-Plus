@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import type { AuthJsonInputType } from '@/features/authFiles/sessionAuthConverter';
+import { createDefaultAuthFileName } from '@/features/authFiles/authFileName';
 import styles from './AuthJsonPasteModal.module.scss';
 
 type AuthJsonPasteModalProps = {
@@ -15,7 +16,7 @@ type AuthJsonPasteModalProps = {
   onSave: (type: AuthJsonInputType, fileName: string, jsonText: string) => Promise<void>;
 };
 
-const DEFAULT_FILE_NAME = 'codex-account.json';
+const DEFAULT_FILE_NAME_HINT = 'MM-DD-HH-mm-codex-account.json';
 const INVALID_BASE_FILE_NAME_PATTERN = /[\\/:*?"<>|]/;
 const FORBIDDEN_INVISIBLE_CODE_POINTS = new Set([
   0x200b,
@@ -93,13 +94,13 @@ export function AuthJsonPasteModal({
 }: AuthJsonPasteModalProps) {
   const { t } = useTranslation();
   const [type, setType] = useState<AuthJsonInputType>('session');
-  const [fileName, setFileName] = useState(DEFAULT_FILE_NAME);
+  const [fileName, setFileName] = useState(() => createDefaultAuthFileName());
   const [jsonText, setJsonText] = useState('');
   const [error, setError] = useState('');
 
   const resetForm = () => {
     setType('session');
-    setFileName(DEFAULT_FILE_NAME);
+    setFileName(createDefaultAuthFileName());
     setJsonText('');
     setError('');
   };
@@ -178,7 +179,7 @@ export function AuthJsonPasteModal({
           value={fileName}
           onChange={(event) => setFileName(event.target.value)}
           disabled={saving || disabled}
-          placeholder={DEFAULT_FILE_NAME}
+          placeholder={DEFAULT_FILE_NAME_HINT}
         />
         <div className={styles.formGroup}>
           <label htmlFor="auth-json-paste-content">{t('auth_files.paste_json_label')}</label>
