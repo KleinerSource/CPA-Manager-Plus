@@ -5,9 +5,7 @@ import {
   IconBot,
   IconFileText,
   IconKey,
-  IconRefreshCw,
   IconSatellite,
-  IconSettings,
 } from '@/components/ui/icons';
 import { useAuthStore, useConfigStore, useModelsStore } from '@/stores';
 import { apiKeysApi, providersApi, authFilesApi } from '@/services/api';
@@ -451,42 +449,10 @@ export function DashboardPage() {
             <span className={styles.time}>{formattedDateTime}</span>
             <span className={styles.date}>{formattedDate}</span>
           </div>
-          <div className={styles.headerActions}>
-            <button
-              className={styles.actionBtn}
-              onClick={refreshDashboard}
-              title={t('common.refresh')}
-            >
-              <IconRefreshCw size={16} />
-              <span>{t('common.refresh')}</span>
-            </button>
-            <Link to="/config" className={styles.actionBtn} title={t('nav.system_config')}>
-              <IconSettings size={16} />
-            </Link>
-          </div>
         </div>
       </header>
 
-      {/* 2. Top Overview Row (Version & Health) */}
-      <section className={styles.overviewRow}>
-        <VersionCard
-          appVersion={__APP_VERSION__ || t('dashboard.version_unknown')}
-          apiVersion={serverVersion || t('dashboard.version_unknown')}
-          serverBuildDate={serverBuildDate || undefined}
-          connectionStatus={connectionStatus}
-          refreshSignal={cardRefreshSignal}
-          usageEnabled={usageSummary.enabled}
-          usageLoading={usageSummary.loading}
-          usageError={usageSummary.error}
-          collectorStatus={collectorStatus}
-          collectorLoading={collectorLoading}
-          collectorError={collectorError}
-          errorLogCount={errorLogs.length}
-          errorLogsLoading={errorLogsLoading}
-        />
-      </section>
-
-      {/* 3. Today's Overview (Metrics Cards) */}
+      {/* 2. Today's Overview (Metrics Cards) */}
       {usageSummary.enabled && (
         <section className={styles.metricsRow}>
           <h2 className={styles.sectionTitle}>{t('dashboard.today_overview_usage_service')}</h2>
@@ -502,7 +468,7 @@ export function DashboardPage() {
         </section>
       )}
 
-      {/* 4. Charts Row (Traffic, Activity, Tokens) */}
+      {/* 3. Charts Row (Traffic, Activity, Tokens) */}
       {usageSummary.enabled && (
         <section className={styles.chartsRow}>
           <TrafficOverviewCard
@@ -516,7 +482,7 @@ export function DashboardPage() {
         </section>
       )}
 
-      {/* 5. Data & Status Row (Rankings, Health, Failures) */}
+      {/* 4. Data & Status Row (Rankings, Health, Failures) */}
       {usageSummary.enabled && (
         <section className={styles.dataRow}>
           <UsageMetricsCard
@@ -550,7 +516,7 @@ export function DashboardPage() {
         </section>
       )}
 
-      {/* 6. Quick Stats + Config Summary */}
+      {/* 5. Quick Stats + Config Summary */}
       <section className={styles.bottomSummaryRow}>
         <div className={styles.quickStatsPanel}>
           <div className={styles.bentoGrid}>
@@ -625,6 +591,25 @@ export function DashboardPage() {
             </Link>
           </div>
         )}
+      </section>
+
+      {/* 6. Bottom Overview Row (Version & Health) */}
+      <section className={styles.overviewRow}>
+        <VersionCard
+          appVersion={__APP_VERSION__ || t('dashboard.version_unknown')}
+          apiVersion={serverVersion || t('dashboard.version_unknown')}
+          serverBuildDate={serverBuildDate || undefined}
+          connectionStatus={connectionStatus}
+          refreshSignal={cardRefreshSignal}
+          usageEnabled={usageSummary.enabled}
+          usageLoading={usageSummary.loading}
+          usageError={usageSummary.error}
+          collectorStatus={collectorStatus}
+          collectorLoading={collectorLoading}
+          collectorError={collectorError}
+          errorLogCount={errorLogs.length}
+          errorLogsLoading={errorLogsLoading}
+        />
       </section>
     </>
   );

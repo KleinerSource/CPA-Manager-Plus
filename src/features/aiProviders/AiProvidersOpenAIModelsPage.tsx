@@ -183,6 +183,7 @@ export function AiProvidersOpenAIModelsPage() {
     <SecondaryScreenShell
       ref={swipeRef}
       contentClassName={layoutStyles.content}
+      hideTopBar
       title={t('ai_providers.openai_models_fetch_title')}
       onBack={handleBack}
       backLabel={t('common.back')}

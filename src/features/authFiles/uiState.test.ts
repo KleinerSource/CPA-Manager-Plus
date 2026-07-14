@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeAuthFilesSortMode, normalizeAuthFilesViewMode } from './uiState';
+import {
+  normalizeAuthFilesLayoutMode,
+  normalizeAuthFilesSortMode,
+  normalizeAuthFilesViewMode,
+} from './uiState';
 
 describe('authFiles uiState', () => {
   it('normalizes persisted sort modes', () => {
@@ -12,5 +16,11 @@ describe('authFiles uiState', () => {
     expect(normalizeAuthFilesViewMode('diagram')).toBe('diagram');
     expect(normalizeAuthFilesViewMode('list')).toBe('list');
     expect(normalizeAuthFilesViewMode('bad')).toBeNull();
+  });
+
+  it('normalizes persisted layout modes', () => {
+    expect(normalizeAuthFilesLayoutMode('card')).toBe('card');
+    expect(normalizeAuthFilesLayoutMode('table')).toBe('table');
+    expect(normalizeAuthFilesLayoutMode('bad')).toBeNull();
   });
 });

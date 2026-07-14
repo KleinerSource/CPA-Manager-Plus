@@ -30,7 +30,13 @@ export interface UseDashboardUsageSummaryReturn {
   refresh: () => Promise<void>;
 }
 
-export function useDashboardUsageSummary(): UseDashboardUsageSummaryReturn {
+interface UseDashboardUsageSummaryOptions {
+  enabled?: boolean;
+}
+
+export function useDashboardUsageSummary(
+  options: UseDashboardUsageSummaryOptions = {}
+): UseDashboardUsageSummaryReturn {
   const managementKey = useAuthStore((state) => state.managementKey);
   const apiBase = useAuthStore((state) => state.apiBase);
   const availability = useRequestMonitoringAvailability();
@@ -41,7 +47,8 @@ export function useDashboardUsageSummary(): UseDashboardUsageSummaryReturn {
   const requestIdRef = useRef(0);
 
   const serviceBase = availability.serviceBase || apiBase;
-  const enabled = Boolean(managementKey && serviceBase);
+  const credentialsEnabled = Boolean(managementKey && serviceBase);
+  const enabled = options.enabled !== false && credentialsEnabled;
 
   const refresh = useCallback(async () => {
     if (!enabled || !serviceBase) {
@@ -78,11 +85,11 @@ export function useDashboardUsageSummary(): UseDashboardUsageSummaryReturn {
   }, [enabled, managementKey, serviceBase]);
 
   useEffect(() => {
-    if (availability.checking) {
+    if (availability.checking || !enabled) {
       return;
     }
     void refresh();
-  }, [availability.checking, refresh]);
+  }, [availability.checking, enabled, refresh]);
 
   useEffect(() => {
     if (!enabled) {

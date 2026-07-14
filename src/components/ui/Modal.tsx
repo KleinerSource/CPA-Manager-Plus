@@ -1,5 +1,6 @@
 import {
   useCallback,
+  createContext,
   useEffect,
   useId,
   useRef,
@@ -32,6 +33,10 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 let activeModalCount = 0;
+
+export type ModalFooterRegistration = (footer: ReactNode | null) => void;
+
+export const ModalFooterContext = createContext<ModalFooterRegistration | null>(null);
 
 const scrollLockSnapshot = {
   scrollY: 0,
@@ -130,6 +135,7 @@ export function Modal({
   const titleId = useId();
   const [isVisible, setIsVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [registeredFooter, setRegisteredFooter] = useState<ReactNode>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modalRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -298,8 +304,12 @@ export function Modal({
             {title}
           </div>
         </div>
-        <div className="modal-body">{children}</div>
-        {footer && <div className="modal-footer">{footer}</div>}
+        <ModalFooterContext.Provider value={setRegisteredFooter}>
+          <div className="modal-body">{children}</div>
+        </ModalFooterContext.Provider>
+        {(footer ?? registeredFooter) && (
+          <div className="modal-footer">{footer ?? registeredFooter}</div>
+        )}
       </div>
     </div>
   );

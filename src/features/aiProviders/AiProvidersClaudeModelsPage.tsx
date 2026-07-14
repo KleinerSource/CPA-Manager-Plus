@@ -199,6 +199,7 @@ export function AiProvidersClaudeModelsPage() {
     <SecondaryScreenShell
       ref={swipeRef}
       contentClassName={layoutStyles.content}
+      hideTopBar
       title={t('ai_providers.claude_models_fetch_title')}
       onBack={handleBack}
       backLabel={t('common.back')}

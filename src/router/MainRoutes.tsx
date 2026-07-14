@@ -12,6 +12,7 @@ import { AiProvidersOpenAIEditLayout } from '@/pages/AiProvidersOpenAIEditLayout
 import { AiProvidersOpenAIEditPage } from '@/pages/AiProvidersOpenAIEditPage';
 import { AiProvidersOpenAIModelsPage } from '@/pages/AiProvidersOpenAIModelsPage';
 import { AiProvidersVertexEditPage } from '@/pages/AiProvidersVertexEditPage';
+import { AiProvidersEditorModal } from '@/features/aiProviders/AiProvidersEditorModal';
 import { AuthFilesPage } from '@/pages/AuthFilesPage';
 import { AuthFilesOAuthExcludedEditPage } from '@/pages/AuthFilesOAuthExcludedEditPage';
 import { AuthFilesOAuthModelAliasEditPage } from '@/pages/AuthFilesOAuthModelAliasEditPage';
@@ -88,13 +89,45 @@ const createMainRoutes = (supportsPlugin: boolean) => [
   { path: '/dashboard', element: <DashboardPage /> },
   { path: '/settings', element: <Navigate to="/config" replace /> },
   { path: '/api-keys', element: <Navigate to="/config" replace /> },
-  { path: '/ai-providers/gemini/new', element: <AiProvidersGeminiEditPage /> },
-  { path: '/ai-providers/gemini/:index', element: <AiProvidersGeminiEditPage /> },
-  { path: '/ai-providers/codex/new', element: <AiProvidersCodexEditPage /> },
-  { path: '/ai-providers/codex/:index', element: <AiProvidersCodexEditPage /> },
+  {
+    path: '/ai-providers/gemini/new',
+    element: (
+      <AiProvidersEditorModal>
+        <AiProvidersGeminiEditPage />
+      </AiProvidersEditorModal>
+    ),
+  },
+  {
+    path: '/ai-providers/gemini/:index',
+    element: (
+      <AiProvidersEditorModal>
+        <AiProvidersGeminiEditPage />
+      </AiProvidersEditorModal>
+    ),
+  },
+  {
+    path: '/ai-providers/codex/new',
+    element: (
+      <AiProvidersEditorModal>
+        <AiProvidersCodexEditPage />
+      </AiProvidersEditorModal>
+    ),
+  },
+  {
+    path: '/ai-providers/codex/:index',
+    element: (
+      <AiProvidersEditorModal>
+        <AiProvidersCodexEditPage />
+      </AiProvidersEditorModal>
+    ),
+  },
   {
     path: '/ai-providers/claude/new',
-    element: <AiProvidersClaudeEditLayout />,
+    element: (
+      <AiProvidersEditorModal>
+        <AiProvidersClaudeEditLayout />
+      </AiProvidersEditorModal>
+    ),
     children: [
       { index: true, element: <AiProvidersClaudeEditPage /> },
       { path: 'models', element: <AiProvidersClaudeModelsPage /> },
@@ -102,17 +135,39 @@ const createMainRoutes = (supportsPlugin: boolean) => [
   },
   {
     path: '/ai-providers/claude/:index',
-    element: <AiProvidersClaudeEditLayout />,
+    element: (
+      <AiProvidersEditorModal>
+        <AiProvidersClaudeEditLayout />
+      </AiProvidersEditorModal>
+    ),
     children: [
       { index: true, element: <AiProvidersClaudeEditPage /> },
       { path: 'models', element: <AiProvidersClaudeModelsPage /> },
     ],
   },
-  { path: '/ai-providers/vertex/new', element: <AiProvidersVertexEditPage /> },
-  { path: '/ai-providers/vertex/:index', element: <AiProvidersVertexEditPage /> },
+  {
+    path: '/ai-providers/vertex/new',
+    element: (
+      <AiProvidersEditorModal>
+        <AiProvidersVertexEditPage />
+      </AiProvidersEditorModal>
+    ),
+  },
+  {
+    path: '/ai-providers/vertex/:index',
+    element: (
+      <AiProvidersEditorModal>
+        <AiProvidersVertexEditPage />
+      </AiProvidersEditorModal>
+    ),
+  },
   {
     path: '/ai-providers/openai/new',
-    element: <AiProvidersOpenAIEditLayout />,
+    element: (
+      <AiProvidersEditorModal>
+        <AiProvidersOpenAIEditLayout />
+      </AiProvidersEditorModal>
+    ),
     children: [
       { index: true, element: <AiProvidersOpenAIEditPage /> },
       { path: 'models', element: <AiProvidersOpenAIModelsPage /> },
@@ -120,13 +175,24 @@ const createMainRoutes = (supportsPlugin: boolean) => [
   },
   {
     path: '/ai-providers/openai/:index',
-    element: <AiProvidersOpenAIEditLayout />,
+    element: (
+      <AiProvidersEditorModal>
+        <AiProvidersOpenAIEditLayout />
+      </AiProvidersEditorModal>
+    ),
     children: [
       { index: true, element: <AiProvidersOpenAIEditPage /> },
       { path: 'models', element: <AiProvidersOpenAIModelsPage /> },
     ],
   },
-  { path: '/ai-providers/ampcode', element: <AiProvidersAmpcodeEditPage /> },
+  {
+    path: '/ai-providers/ampcode',
+    element: (
+      <AiProvidersEditorModal>
+        <AiProvidersAmpcodeEditPage />
+      </AiProvidersEditorModal>
+    ),
+  },
   { path: '/ai-providers', element: <AiProvidersPage /> },
   { path: '/ai-providers/*', element: <AiProvidersPage /> },
   { path: '/auth-files', element: <AuthFilesPage /> },

@@ -283,11 +283,11 @@
 .filterControls {
   display: grid;
   grid-template-columns:
-    minmax(0, 1fr)
-    minmax(88px, 120px)
-    minmax(150px, 200px)
-    minmax(170px, 220px)
-    minmax(136px, 160px);
+    minmax(220px, 1.35fr)
+    minmax(88px, 112px)
+    minmax(150px, 1fr)
+    minmax(170px, 1.1fr)
+    minmax(120px, 140px);
   gap: 8px;
   align-items: flex-end;
   min-width: 0;
@@ -313,6 +313,10 @@
   @include mobile {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 
+    .filterItem:first-child {
+      min-width: 0;
+    }
+
     // 搜索框独占一行，其余控件按两列排列，保持竖屏下的操作密度。
     .filterItem:first-child,
     .problemTypeFilterItem {
@@ -337,8 +341,18 @@
   }
 }
 
+.filterControls > .filterItem:first-child {
+  min-width: 220px;
+}
+
+@include mobile {
+  .filterControls > .filterItem:first-child {
+    min-width: 0;
+  }
+}
+
 .displayOptionsItem {
-  min-width: 0;
+  min-width: 120px;
 }
 
 .displayOptionsTrigger {
@@ -350,6 +364,11 @@
   border-radius: 12px;
   font-size: 13px;
   font-weight: 500;
+  white-space: nowrap;
+
+  :global(> span) {
+    white-space: nowrap;
+  }
 }
 
 .displayOptionsMenu {
@@ -1323,6 +1342,309 @@
   }
 }
 
+.authFileTableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+  border-radius: 12px;
+  background: var(--bg-primary);
+}
+
+.authFileTable {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  th,
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-color) 58%, transparent);
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  th {
+    color: var(--text-tertiary);
+    background: color-mix(in srgb, var(--surface-subtle) 72%, transparent);
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  tbody tr:hover {
+    background: color-mix(in srgb, var(--primary-color) 4%, transparent);
+  }
+}
+
+.authFileTableRowDisabled {
+  opacity: 0.72;
+}
+
+.authFileTableSelectCell {
+  width: 44px;
+  text-align: center !important;
+}
+
+.authFileTableNameCell {
+  max-width: 280px;
+}
+
+.authFileTableTypeCell {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  min-width: 112px;
+}
+
+.authFileTablePlanBadge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 120px;
+  padding: 3px 7px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 28%, var(--border-color));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--primary-color) 10%, var(--bg-primary));
+  color: var(--primary-active);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.authFileTableName {
+  max-width: 280px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.authFileTableStatusMessage {
+  display: block;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.authFileTableSubLabel,
+.authFileTableStatusHint {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
+.authFileTableStatusCell {
+  width: 78px;
+  min-width: 78px;
+  max-width: 92px;
+}
+
+.authFileTableStatusCell .stateBadge {
+  display: inline-flex;
+  max-width: 78px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.authFileTableStatusHint {
+  max-width: 88px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.authFileTableHealthCell {
+  min-width: 138px;
+}
+
+.authFileTableHealthCell :global(.statusBar) {
+  min-width: 126px;
+}
+
+.authFileTableQuotaCell {
+  min-width: 150px;
+}
+
+.authFileTableQuotaStack {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 136px;
+}
+
+.authFileTableQuotaItem {
+  min-width: 0;
+}
+
+.authFileTableQuotaHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.authFileTableQuotaHeader strong {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.authFileTableQuotaTrack {
+  height: 5px;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border-color) 55%, transparent);
+}
+
+.authFileTableQuotaFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.authFileTableQuotaLow {
+  background: var(--success-color);
+}
+
+.authFileTableQuotaMedium {
+  background: var(--warning-color);
+}
+
+.authFileTableQuotaHigh {
+  background: var(--danger-color);
+}
+
+.authFileTableQuotaUnknown {
+  background: var(--text-tertiary);
+}
+
+.authFileTableQuotaReset {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.authFileTableErrorCell {
+  max-width: 240px;
+  color: var(--danger-color);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.authFileTableStatusMessage {
+  max-width: 220px;
+  margin-top: 3px;
+  color: var(--warning-text);
+}
+
+.authFileTableStatusActive {
+  color: var(--success-color);
+}
+
+.authFileTableStatusWarning {
+  color: var(--warning-text);
+}
+
+.authFileTableStatusDisabled {
+  color: var(--text-tertiary);
+}
+
+.authFileTableStatusVirtual {
+  color: var(--primary-color);
+}
+
+.authFileTableUsageCell {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.authFileTableSuccess {
+  color: var(--success-color);
+  font-weight: 700;
+}
+
+.authFileTableFailure {
+  color: var(--danger-color);
+  font-weight: 700;
+}
+
+.authFileTableActionsCell {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right !important;
+}
+
+.authFileTableActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  width: 100%;
+
+  :global(.btn.btn-xs) {
+    min-width: 28px;
+    padding: 0 6px;
+  }
+}
+
+.authFileTableQuotaResetButton {
+  position: relative;
+  overflow: visible;
+}
+
+.authFileTableQuotaResetBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border: 1px solid var(--surface-card);
+  border-radius: 999px;
+  background: var(--color-warning, #f59e0b);
+  color: #111827;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .healthStatusMessage {
   display: flex;
   align-items: flex-start;
@@ -1694,8 +2016,8 @@
   display: flex;
   flex-direction: column;
   gap: $spacing-md;
-  max-height: 60vh;
-  overflow: auto;
+  // 滚动交由 Modal 的 .modal-body 统一处理，避免编辑器内部再嵌套滚动容器。
+  min-height: 0;
 }
 
 .prefixProxyLoading {
@@ -1750,8 +2072,6 @@
 
 .prefixProxyInvalidContentPreview {
   width: 100%;
-  max-height: 280px;
-  overflow: auto;
   margin: 0;
   padding: $spacing-sm $spacing-md;
   border: 1px solid var(--border-color);
@@ -1772,6 +2092,18 @@
 
   :global(.form-group) {
     margin: 0;
+  }
+}
+
+.prefixProxyInlineFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $spacing-sm;
+}
+
+@include mobile {
+  .prefixProxyInlineFields {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -89,58 +89,30 @@ export function AuthFilesPrefixProxyEditorModal(props: AuthFilesPrefixProxyEdito
           ) : (
             <>
               {editor.error && <div className={styles.prefixProxyError}>{editor.error}</div>}
-              <div className={styles.prefixProxyJsonWrapper}>
-                <label className={styles.prefixProxyLabel}>
-                  {t('auth_files.prefix_proxy_info_label')}
-                </label>
-                <textarea
-                  className={styles.prefixProxyTextarea}
-                  rows={8}
-                  readOnly
-                  value={editor.fileInfoText}
-                />
-              </div>
-              <div className={styles.prefixProxyJsonWrapper}>
-                <label className={styles.prefixProxyLabel}>
-                  {editor.json
-                    ? t('auth_files.prefix_proxy_source_label')
-                    : t('auth_files.prefix_proxy_invalid_content_label')}
-                </label>
-                {editor.json ? (
-                  <textarea
-                    className={styles.prefixProxyTextarea}
-                    rows={10}
-                    readOnly
-                    value={previewText}
-                  />
-                ) : (
-                  <pre className={styles.prefixProxyInvalidContentPreview}>
-                    {invalidContentPreview}
-                  </pre>
-                )}
-              </div>
               {editor.json && (
                 <div className={styles.prefixProxyFields}>
-                  <Input
-                    label={t('auth_files.prefix_label')}
-                    value={editor.prefix}
-                    disabled={disableControls || editor.saving || !editor.json}
-                    onChange={(e) => onChange('prefix', e.target.value)}
-                  />
+                  <div className={styles.prefixProxyInlineFields}>
+                    <Input
+                      label={t('auth_files.prefix_label')}
+                      value={editor.prefix}
+                      disabled={disableControls || editor.saving || !editor.json}
+                      onChange={(e) => onChange('prefix', e.target.value)}
+                    />
+                    <Input
+                      label={t('auth_files.priority_label')}
+                      value={editor.priority}
+                      placeholder={t('auth_files.priority_placeholder')}
+                      hint={t('auth_files.priority_hint')}
+                      disabled={disableControls || editor.saving || !editor.json}
+                      onChange={(e) => onChange('priority', e.target.value)}
+                    />
+                  </div>
                   <Input
                     label={t('auth_files.proxy_url_label')}
                     value={editor.proxyUrl}
                     placeholder={t('auth_files.proxy_url_placeholder')}
                     disabled={disableControls || editor.saving || !editor.json}
                     onChange={(e) => onChange('proxyUrl', e.target.value)}
-                  />
-                  <Input
-                    label={t('auth_files.priority_label')}
-                    value={editor.priority}
-                    placeholder={t('auth_files.priority_placeholder')}
-                    hint={t('auth_files.priority_hint')}
-                    disabled={disableControls || editor.saving || !editor.json}
-                    onChange={(e) => onChange('priority', e.target.value)}
                   />
                   {editor.providerKey === 'codex' && (
                     <>
@@ -189,6 +161,28 @@ export function AuthFilesPrefixProxyEditorModal(props: AuthFilesPrefixProxyEdito
                     {editor.headersError && <div className="error-box">{editor.headersError}</div>}
                     <div className="hint">{t('auth_files.headers_hint')}</div>
                   </div>
+                  <div className={styles.prefixProxyJsonWrapper}>
+                    <label className={styles.prefixProxyLabel}>
+                      {t('auth_files.prefix_proxy_info_label')}
+                    </label>
+                    <textarea
+                      className={styles.prefixProxyTextarea}
+                      rows={8}
+                      readOnly
+                      value={editor.fileInfoText}
+                    />
+                  </div>
+                  <div className={styles.prefixProxyJsonWrapper}>
+                    <label className={styles.prefixProxyLabel}>
+                      {t('auth_files.prefix_proxy_source_label')}
+                    </label>
+                    <textarea
+                      className={styles.prefixProxyTextarea}
+                      rows={10}
+                      readOnly
+                      value={previewText}
+                    />
+                  </div>
                   <Input
                     label={t('auth_files.note_label')}
                     value={editor.note}
@@ -198,6 +192,29 @@ export function AuthFilesPrefixProxyEditorModal(props: AuthFilesPrefixProxyEdito
                     onChange={(e) => onChange('note', e.target.value)}
                   />
                 </div>
+              )}
+              {!editor.json && (
+                <>
+                  <div className={styles.prefixProxyJsonWrapper}>
+                    <label className={styles.prefixProxyLabel}>
+                      {t('auth_files.prefix_proxy_info_label')}
+                    </label>
+                    <textarea
+                      className={styles.prefixProxyTextarea}
+                      rows={8}
+                      readOnly
+                      value={editor.fileInfoText}
+                    />
+                  </div>
+                  <div className={styles.prefixProxyJsonWrapper}>
+                    <label className={styles.prefixProxyLabel}>
+                      {t('auth_files.prefix_proxy_invalid_content_label')}
+                    </label>
+                    <pre className={styles.prefixProxyInvalidContentPreview}>
+                      {invalidContentPreview}
+                    </pre>
+                  </div>
+                </>
               )}
             </>
           )}

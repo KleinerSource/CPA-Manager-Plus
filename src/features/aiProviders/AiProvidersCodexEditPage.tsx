@@ -515,6 +515,7 @@ export function AiProvidersCodexEditPage() {
     <SecondaryScreenShell
       ref={swipeRef}
       contentClassName={layoutStyles.content}
+      hideTopBar
       title={title}
       onBack={handleBack}
       backLabel={t('common.back')}
@@ -563,6 +564,7 @@ export function AiProvidersCodexEditPage() {
               onChange={(e) => setForm((prev) => ({ ...prev, apiKey: e.target.value }))}
               disabled={disableControls || saving}
             />
+            <div className={styles.providerInlineFields}>
             <Input
               label={t('ai_providers.priority_label')}
               hint={t('ai_providers.priority_hint')}
@@ -587,6 +589,7 @@ export function AiProvidersCodexEditPage() {
               hint={t('ai_providers.prefix_hint')}
               disabled={disableControls || saving}
             />
+            </div>
             <Input
               label={t('ai_providers.codex_add_modal_url_label')}
               value={form.baseUrl ?? ''}

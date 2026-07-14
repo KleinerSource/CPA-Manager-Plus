@@ -11,6 +11,8 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { PageTransition } from '@/components/common/PageTransition';
+import { HeaderUsageSummary } from '@/components/layout/HeaderUsageSummary';
+import { useDashboardUsageSummary } from '@/features/dashboard/hooks/useDashboardUsageSummary';
 import { MainRoutes } from '@/router/MainRoutes';
 import { pluginsApi } from '@/services/api';
 import {
@@ -206,6 +208,7 @@ export function MainLayout() {
   const { showNotification } = useNotificationStore();
   const location = useLocation();
   const navigate = useNavigate();
+  const isDashboardPage = location.pathname === '/' || location.pathname === '/dashboard';
 
   const logout = useAuthStore((state) => state.logout);
   const connectionStatus = useAuthStore((state) => state.connectionStatus);
@@ -216,6 +219,7 @@ export function MainLayout() {
   const fetchConfig = useConfigStore((state) => state.fetchConfig);
   const clearCache = useConfigStore((state) => state.clearCache);
   const featureAvailability = usePanelFeatureAvailability();
+  const headerUsage = useDashboardUsageSummary({ enabled: !isDashboardPage });
 
   const theme = useThemeStore((state) => state.theme);
   const setTheme = useThemeStore((state) => state.setTheme);
@@ -624,8 +628,14 @@ export function MainLayout() {
     const isAiProviders = (pathname: string) =>
       pathname === '/ai-providers' || pathname.startsWith('/ai-providers/');
     if (isAuthFiles(from) && isAuthFiles(to)) return 'ios';
-    if (isAiProviders(from) && isAiProviders(to)) return 'ios';
+    if (isAiProviders(from) && isAiProviders(to)) return 'none';
     return 'none';
+  }, []);
+
+  const preserveScrollPosition = useCallback((fromPathname: string, toPathname: string) => {
+    const isAiProviders = (pathname: string) =>
+      pathname === '/ai-providers' || pathname.startsWith('/ai-providers/');
+    return isAiProviders(fromPathname) && isAiProviders(toPathname);
   }, []);
 
   const handleRefreshAll = async () => {
@@ -634,6 +644,7 @@ export function MainLayout() {
       fetchConfig(undefined, true),
       loadPluginResources(),
       triggerHeaderRefresh(),
+      headerUsage.refresh(),
     ]);
     const rejected = results.find((result) => result.status === 'rejected');
     if (rejected && rejected.status === 'rejected') {
@@ -739,6 +750,8 @@ export function MainLayout() {
                 <span className="breadcrumb-item">{currentRouteLabel}</span>
               </nav>
             </div>
+
+            {!isDashboardPage && <HeaderUsageSummary usage={headerUsage} />}
 
             <div className="navbar-right">
               <Button
@@ -997,6 +1010,7 @@ export function MainLayout() {
                 render={(location) => <MainRoutes location={location} />}
                 getRouteOrder={getRouteOrder}
                 getTransitionVariant={getTransitionVariant}
+                preserveScrollPosition={preserveScrollPosition}
                 scrollContainerRef={contentRef}
               />
             </main>

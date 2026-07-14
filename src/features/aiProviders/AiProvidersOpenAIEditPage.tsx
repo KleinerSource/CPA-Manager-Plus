@@ -505,6 +505,7 @@ export function AiProvidersOpenAIEditPage() {
     <SecondaryScreenShell
       ref={swipeRef}
       contentClassName={layoutStyles.content}
+      hideTopBar
       title={title}
       onBack={handleBack}
       backLabel={t('common.back')}
@@ -546,6 +547,7 @@ export function AiProvidersOpenAIEditPage() {
               onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
               disabled={saving || disableControls || isTestingKeys}
             />
+            <div className={styles.providerInlineFields}>
             <Input
               label={t('ai_providers.priority_label')}
               hint={t('ai_providers.priority_hint')}
@@ -570,6 +572,7 @@ export function AiProvidersOpenAIEditPage() {
               hint={t('ai_providers.prefix_hint')}
               disabled={saving || disableControls || isTestingKeys}
             />
+            </div>
             <Input
               label={t('ai_providers.openai_add_modal_url_label')}
               value={form.baseUrl}

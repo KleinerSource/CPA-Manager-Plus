@@ -1117,6 +1117,258 @@ $openai-toolbar-control-height: 36px;
   background: var(--failure-badge-bg);
 }
 
+.displayOptionsItem {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.listModeToolbar {
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+}
+
+.providerTypeList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $spacing-sm;
+}
+
+.providerTypeButton {
+  justify-content: center;
+  min-height: 42px;
+}
+
+.providerEditorModal {
+  :global(.modal-body) {
+    padding: $spacing-lg;
+    max-height: calc(90vh - 24px);
+  }
+
+  // 编辑页已经处于 Modal 容器内，移除表单外层 Card，避免出现卡片套卡片。
+  :global(.card) {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  :global(.secondary-shell-floating-action-container) {
+    z-index: 2010;
+  }
+}
+
+.displayOptionsTrigger:global(.btn) {
+  min-height: 36px;
+  white-space: nowrap;
+}
+
+.displayOptionsMenu {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  min-width: 190px;
+}
+
+.unifiedProviderTableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: $radius-md;
+  background: var(--bg-primary);
+}
+
+.unifiedProviderTable {
+  width: 100%;
+  min-width: 1120px;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  th,
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-subtle);
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  th {
+    background: var(--surface-subtle-strong);
+    color: var(--text-secondary);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  tbody tr:hover {
+    background: var(--surface-subtle-hover);
+  }
+}
+
+.unifiedProviderRowDisabled {
+  opacity: 0.72;
+}
+
+.unifiedProviderBadge,
+.unifiedProviderStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-full;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.unifiedProviderBadge {
+  padding: 4px 8px;
+  background: color-mix(in srgb, var(--primary-color) 12%, var(--surface-subtle));
+  border: 1px solid color-mix(in srgb, var(--primary-color) 30%, var(--border-subtle));
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.unifiedProviderNameCell,
+.unifiedProviderUrlCell,
+.unifiedProviderCredentialCell {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unifiedProviderNameCell {
+  min-width: 140px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.unifiedProviderUrlCell,
+.unifiedProviderCredentialCell {
+  color: var(--text-secondary);
+  font-family: 'Monaco', 'Menlo', 'Consolas', 'Ubuntu Mono', monospace;
+}
+
+.unifiedProviderHoverValue {
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+  text-decoration: underline dotted var(--text-tertiary);
+  text-underline-offset: 3px;
+}
+
+.unifiedProviderHoverPopover {
+  position: fixed;
+  z-index: 1100;
+  width: min(320px, calc(100vw - 24px));
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--border-primary, var(--border-subtle));
+  border-radius: $radius-md;
+  background: var(--bg-primary);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+  color: var(--text-primary);
+  pointer-events: none;
+}
+
+.unifiedProviderHoverPopoverTitle {
+  margin-bottom: 7px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.unifiedProviderHoverPopoverList {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: 'Monaco', 'Menlo', 'Consolas', 'Ubuntu Mono', monospace;
+  font-size: 11px;
+  line-height: 1.45;
+
+  li {
+    overflow-wrap: anywhere;
+  }
+}
+
+.unifiedProviderNumberCell,
+.unifiedProviderUsageCell {
+  white-space: nowrap;
+  text-align: center !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.unifiedProviderUsageCell {
+  font-weight: 600;
+}
+
+.unifiedProviderSuccess {
+  color: var(--success-badge-text, #065f46);
+}
+
+.unifiedProviderFailure {
+  color: var(--failure-badge-text, #991b1b);
+}
+
+.unifiedProviderHealthCell {
+  min-width: 170px;
+
+  .statusBar {
+    min-width: 150px;
+    max-width: 180px;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+.unifiedProviderStatusBadge {
+  padding: 4px 8px;
+  font-weight: 600;
+}
+
+.unifiedProviderStatusEnabled {
+  background: var(--success-badge-bg, #d1fae5);
+  border: 1px solid var(--success-badge-border, #6ee7b7);
+  color: var(--success-badge-text, #065f46);
+}
+
+.unifiedProviderStatusDisabled {
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-tertiary);
+}
+
+.unifiedProviderActionsCell {
+  width: 1%;
+  text-align: right !important;
+  white-space: nowrap;
+}
+
+.unifiedProviderActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.unifiedProviderEmpty {
+  padding: 36px 20px;
+  border: 1px dashed var(--border-subtle);
+  border-radius: $radius-md;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
 @include mobile {
   .statusTooltip {
     font-size: 12px;
@@ -1148,6 +1400,16 @@ $openai-toolbar-control-height: 36px;
   :global(.status-badge) {
     margin-bottom: 0;
     align-self: flex-start;
+  }
+}
+
+.providerInlineFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $spacing-md;
+
+  @include mobile {
+    grid-template-columns: 1fr;
   }
 }
 

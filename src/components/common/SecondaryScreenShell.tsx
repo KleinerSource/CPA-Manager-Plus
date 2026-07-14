@@ -1,8 +1,16 @@
-import { forwardRef, useLayoutEffect, useRef, type ReactNode } from 'react';
+import {
+  forwardRef,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { IconChevronLeft } from '@/components/ui/icons';
+import { ModalFooterContext } from '@/components/ui/Modal';
 import { usePageTransitionLayer } from './PageTransitionLayer';
 import styles from './SecondaryScreenShell.module.scss';
 
@@ -12,6 +20,7 @@ export type SecondaryScreenShellProps = {
   backLabel?: string;
   backAriaLabel?: string;
   rightAction?: ReactNode;
+  hideTopBar?: boolean;
   hideTopBarBackButton?: boolean;
   hideTopBarRightAction?: boolean;
   floatingAction?: ReactNode;
@@ -30,6 +39,7 @@ export const SecondaryScreenShell = forwardRef<HTMLDivElement, SecondaryScreenSh
       backLabel = 'Back',
       backAriaLabel,
       rightAction,
+      hideTopBar = false,
       hideTopBarBackButton = false,
       hideTopBarRightAction = false,
       floatingAction,
@@ -53,8 +63,16 @@ export const SecondaryScreenShell = forwardRef<HTMLDivElement, SecondaryScreenSh
     const resolvedBackAriaLabel = backAriaLabel ?? backLabel;
     const pageTransitionLayer = usePageTransitionLayer();
     const isCurrentLayer = pageTransitionLayer ? pageTransitionLayer.isCurrentLayer : true;
-    const shouldRenderFloatingAction = Boolean(floatingAction) && isCurrentLayer;
+    const registerModalFooter = useContext(ModalFooterContext);
+    const shouldRenderFloatingAction =
+      Boolean(floatingAction) && isCurrentLayer && !registerModalFooter;
     const floatingActionRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+      if (!registerModalFooter || !floatingAction) return;
+      registerModalFooter(floatingAction);
+      return () => registerModalFooter(null);
+    }, [floatingAction, registerModalFooter]);
 
     useLayoutEffect(() => {
       if (!shouldRenderFloatingAction) return;
@@ -87,28 +105,30 @@ export const SecondaryScreenShell = forwardRef<HTMLDivElement, SecondaryScreenSh
     return (
       <>
         <div className={containerClassName} ref={ref}>
-          <div className={styles.topBar}>
-            {onBack && !hideTopBarBackButton ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onBack}
-                className={styles.backButton}
-                aria-label={resolvedBackAriaLabel}
-              >
-                <span className={styles.backIcon}>
-                  <IconChevronLeft size={18} />
-                </span>
-                <span className={styles.backText}>{backLabel}</span>
-              </Button>
-            ) : (
-              <div />
-            )}
-            <div className={styles.topBarTitle} title={titleTooltip}>
-              {title}
+          {!hideTopBar && (
+            <div className={styles.topBar}>
+              {onBack && !hideTopBarBackButton ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onBack}
+                  className={styles.backButton}
+                  aria-label={resolvedBackAriaLabel}
+                >
+                  <span className={styles.backIcon}>
+                    <IconChevronLeft size={18} />
+                  </span>
+                  <span className={styles.backText}>{backLabel}</span>
+                </Button>
+              ) : (
+                <div />
+              )}
+              <div className={styles.topBarTitle} title={titleTooltip}>
+                {title}
+              </div>
+              <div className={styles.rightSlot}>{hideTopBarRightAction ? null : rightAction}</div>
             </div>
-            <div className={styles.rightSlot}>{hideTopBarRightAction ? null : rightAction}</div>
-          </div>
+          )}
 
           {isLoading ? (
             <div className={styles.loadingState}>

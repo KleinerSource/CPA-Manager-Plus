@@ -505,6 +505,7 @@ export function AiProvidersGeminiEditPage() {
     <SecondaryScreenShell
       ref={swipeRef}
       contentClassName={layoutStyles.content}
+      hideTopBar
       title={title}
       onBack={handleBack}
       backLabel={t('common.back')}
@@ -548,6 +549,7 @@ export function AiProvidersGeminiEditPage() {
               onChange={(e) => setForm((prev) => ({ ...prev, apiKey: e.target.value }))}
               disabled={disableControls || saving}
             />
+            <div className={styles.providerInlineFields}>
             <Input
               label={t('ai_providers.priority_label')}
               hint={t('ai_providers.priority_hint')}
@@ -572,6 +574,7 @@ export function AiProvidersGeminiEditPage() {
               hint={t('ai_providers.prefix_hint')}
               disabled={disableControls || saving}
             />
+            </div>
             <Input
               label={t('ai_providers.gemini_base_url_label')}
               placeholder={t('ai_providers.gemini_base_url_placeholder')}
