@@ -157,6 +157,10 @@ export const normalizeProviderKey = (value: string) => {
 };
 
 export const getAuthFileStatusMessage = (file: AuthFileItem): string => {
+  if (typeof file.error === 'string' && file.error.trim()) {
+    return file.error.trim();
+  }
+
   const raw = file['status_message'] ?? file.statusMessage;
   if (typeof raw === 'string') return raw.trim();
   if (raw == null) return '';

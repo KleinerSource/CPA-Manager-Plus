@@ -86,6 +86,18 @@ describe('AuthFileCard', () => {
     expect(renderCard(file, false)).toContain('upstream failed');
   });
 
+  it('显示接口 error 字段中的运行时错误，并受 hideErrors 控制', () => {
+    const file: AuthFileItem = {
+      name: 'codex-runtime-error.json',
+      type: 'codex',
+      statusMessage: 'ok',
+      error: 'quota exceeded',
+    };
+
+    expect(renderCard(file, true)).not.toContain('quota exceeded');
+    expect(renderCard(file, false)).toContain('quota exceeded');
+  });
+
   it('未刷新额度时也显示认证文件里的 Codex 套餐类型', () => {
     const html = renderCard({
       name: 'codex-plus.json',
