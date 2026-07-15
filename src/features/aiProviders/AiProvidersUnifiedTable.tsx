@@ -115,6 +115,10 @@ export function AiProvidersUnifiedTable({
   actionsDisabled,
 }: AiProvidersUnifiedTableProps) {
   const { t } = useTranslation();
+  const displayRows = rows
+    .map((row, index) => ({ row, index }))
+    .sort((left, right) => Number(left.row.disabled) - Number(right.row.disabled) || left.index - right.index)
+    .map(({ row }) => row);
 
   if (loading && rows.length === 0) {
     return <div className="hint">{t('common.loading')}</div>;
@@ -141,7 +145,7 @@ export function AiProvidersUnifiedTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
+          {displayRows.map((row) => (
             <tr key={row.id} className={row.disabled ? styles.unifiedProviderRowDisabled : ''}>
               <td>
                 <span className={`${styles.unifiedProviderBadge} ${row.providerClassName ?? ''}`}>

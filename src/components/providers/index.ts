@@ -10,6 +10,7 @@ export { ProviderNav } from './ProviderNav';
 export { ModelTagList } from './ModelTagList';
 export { ProviderCardTitle } from './ProviderCardTitle';
 export { ProviderApiKeyEntries } from './ProviderApiKeyEntries';
+export { FloatingProviderSection } from './FloatingProviderSection';
 export type { ProviderApiKeyEntry } from './ProviderApiKeyEntries';
 export * from './hooks/useProviderRecentRequests';
 export * from './types';

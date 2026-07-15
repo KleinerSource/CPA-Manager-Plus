@@ -23,6 +23,8 @@ import {
 } from '@/utils/recentRequests';
 import type { AuthFileStatusBarData } from '@/features/authFiles/hooks/useAuthFilesStatusBarCache';
 import {
+  getAuthFileQuotaErrorMessage,
+  getQuotaI18nPrefix,
   getCodexQuotaResetCreditsAvailableCount,
   useAuthFileQuotaRefresh,
 } from '@/features/authFiles/components/AuthFileQuotaSection';
@@ -184,19 +186,21 @@ export function AuthFileTable({
                   ) : null}
                 </td>
                 <td className={styles.authFileTableTypeCell}>
-                  <span
-                    className={styles.typeBadge}
-                    style={{
-                      backgroundColor: typeColor.bg,
-                      color: typeColor.text,
-                      ...(typeColor.border ? { border: typeColor.border } : {}),
-                    }}
-                  >
-                    {typeLabel}
-                  </span>
-                  {planLabel ? (
-                    <span className={styles.authFileTablePlanBadge}>{planLabel}</span>
-                  ) : null}
+                  <div className={styles.authFileTableTypeContent}>
+                    <span
+                      className={styles.typeBadge}
+                      style={{
+                        backgroundColor: typeColor.bg,
+                        color: typeColor.text,
+                        ...(typeColor.border ? { border: typeColor.border } : {}),
+                      }}
+                    >
+                      {typeLabel}
+                    </span>
+                    {planLabel ? (
+                      <span className={styles.authFileTablePlanBadge}>{planLabel}</span>
+                    ) : null}
+                  </div>
                 </td>
                 <td>
                   <div className={styles.authFileTableStatusCell}>
@@ -215,22 +219,11 @@ export function AuthFileTable({
                   <ProviderStatusBar statusData={statusData} styles={styles} />
                 </td>
                 <td className={styles.authFileTableQuotaCell}>
-                  <div className={styles.authFileTableQuotaStack}>
-                    {providerKey === 'codex' ? (
-                      <>
-                        <QuotaProgress
-                          label={t('auth_files.table_quota_five_hour')}
-                          percent={toRemainingQuotaPercent(codexStatus.fiveHourUsedPercent)}
-                          resetLabel={codexStatus.fiveHourResetLabel}
-                        />
-                        <QuotaProgress
-                          label={t('auth_files.table_quota_weekly')}
-                          percent={toRemainingQuotaPercent(codexStatus.weeklyUsedPercent)}
-                          resetLabel={codexStatus.weeklyResetLabel}
-                        />
-                      </>
-                    ) : null}
-                  </div>
+                  <AuthFileTableQuotaCell
+                    file={file}
+                    codexStatus={codexStatus}
+                    disableControls={disableControls}
+                  />
                 </td>
                 <td className={styles.authFileTableUsageCell}>
                   <span className={styles.authFileTableSuccess}>{normalizeUsageTotal(file.success)}</span>
@@ -326,9 +319,9 @@ function QuotaProgress({ label, percent, resetLabel }: QuotaProgressProps) {
   const progressClass =
     normalizedPercent === null
       ? styles.authFileTableQuotaUnknown
-      : normalizedPercent >= 100
+      : normalizedPercent >= 70
         ? styles.authFileTableQuotaLow
-        : normalizedPercent >= 50
+        : normalizedPercent >= 30
           ? styles.authFileTableQuotaMedium
           : styles.authFileTableQuotaHigh;
 
@@ -345,6 +338,53 @@ function QuotaProgress({ label, percent, resetLabel }: QuotaProgressProps) {
         />
       </div>
       {resetLabel ? <span className={styles.authFileTableQuotaReset}>{resetLabel}</span> : null}
+    </div>
+  );
+}
+
+type AuthFileTableQuotaCellProps = {
+  file: AuthFileItem;
+  codexStatus: AuthFileCodexStatusSummary;
+  disableControls: boolean;
+};
+
+function AuthFileTableQuotaCell({
+  file,
+  codexStatus,
+  disableControls,
+}: AuthFileTableQuotaCellProps) {
+  const { t } = useTranslation();
+  const quotaType = resolveTableQuotaType(file);
+  const { quota, quotaStatus } = useAuthFileQuotaRefresh(file, quotaType, disableControls);
+
+  if (quotaType && quotaStatus === 'error') {
+    return (
+      <div className={styles.authFileTableQuotaStack}>
+        <div className={styles.quotaError}>
+          {t(`${getQuotaI18nPrefix(quotaType)}.load_failed`, {
+            message: getAuthFileQuotaErrorMessage(t, quota),
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.authFileTableQuotaStack}>
+      {quotaType === 'codex' ? (
+        <>
+          <QuotaProgress
+            label={t('auth_files.table_quota_five_hour')}
+            percent={toRemainingQuotaPercent(codexStatus.fiveHourUsedPercent)}
+            resetLabel={codexStatus.fiveHourResetLabel}
+          />
+          <QuotaProgress
+            label={t('auth_files.table_quota_weekly')}
+            percent={toRemainingQuotaPercent(codexStatus.weeklyUsedPercent)}
+            resetLabel={codexStatus.weeklyResetLabel}
+          />
+        </>
+      ) : null}
     </div>
   );
 }

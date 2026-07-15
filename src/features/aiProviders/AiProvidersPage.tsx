@@ -619,19 +619,15 @@ export function AiProvidersPage() {
       <div className={styles.content}>
         {error && <div className="error-box">{error}</div>}
 
-        <div
-          className={styles.displayOptionsItem + (listMode ? ' ' + styles.listModeToolbar : '')}
-        >
-          {listMode && (
-            <Button
-              size="sm"
-              onClick={() => setAddProviderModalOpen(true)}
-              disabled={disableControls || loading}
-            >
-              <IconPlus size={15} />
-              {t('ai_providers.add_provider')}
-            </Button>
-          )}
+        <div className={styles.displayOptionsItem}>
+          <Button
+            size="sm"
+            onClick={() => setAddProviderModalOpen(true)}
+            disabled={disableControls || loading}
+          >
+            <IconPlus size={15} />
+            {t('ai_providers.add_provider')}
+          </Button>
           <DropdownMenu
             ariaLabel={t('ai_providers.display_options_label')}
             triggerLabel={t('ai_providers.display_options_label')}

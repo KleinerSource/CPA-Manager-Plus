@@ -647,7 +647,8 @@
 
 .quotaSection {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   align-items: stretch;
   gap: $spacing-sm;
   min-width: 0;
@@ -660,8 +661,14 @@
   display: flex;
   flex-direction: column;
   gap: $spacing-xs;
+  flex: 1 1 0;
   min-width: 0;
   padding: 2px 0;
+}
+
+.quotaRow + .quotaRow {
+  padding-left: $spacing-sm;
+  border-left: 1px solid color-mix(in srgb, var(--border-color) 38%, transparent);
 }
 
 .quotaSection > .codexPlan,
@@ -674,14 +681,15 @@
 
 .quotaRowHeader {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: $spacing-sm;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: $spacing-xs;
   min-width: 0;
 }
 
 .quotaModel {
-  flex: 1;
+  width: 100%;
   min-width: 0;
   font-size: 13px;
   font-weight: 600;
@@ -906,6 +914,7 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
+  min-height: 360px;
   transition:
     transform $transition-fast,
     box-shadow $transition-fast,
@@ -955,6 +964,7 @@
 .fileCardCompact {
   padding: 12px;
   border-radius: 10px;
+  min-height: 280px;
 
   .fileCardMain {
     gap: 8px;
@@ -984,7 +994,7 @@
   }
 
   .fileName {
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.3;
   }
 
@@ -1233,10 +1243,10 @@
 .fileName {
   display: block;
   min-width: 0;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   color: var(--text-primary);
-  line-height: 1.35;
+  line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1296,15 +1306,6 @@
   color: var(--text-secondary);
   line-height: 1.4;
   overflow-wrap: anywhere;
-}
-
-.planMetaItem {
-  min-width: 0;
-}
-
-.planMetaValue {
-  color: var(--primary-color);
-  font-weight: 750;
 }
 
 .noteText {
@@ -1394,11 +1395,15 @@
 }
 
 .authFileTableTypeCell {
+  min-width: 112px;
+}
+
+.authFileTableTypeContent {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 4px;
-  min-width: 112px;
+  min-width: 0;
 }
 
 .authFileTablePlanBadge {
@@ -1479,12 +1484,15 @@
 
 .authFileTableQuotaStack {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: flex-start;
+  flex-wrap: nowrap;
   gap: 7px;
   min-width: 136px;
 }
 
 .authFileTableQuotaItem {
+  flex: 1 1 0;
   min-width: 0;
 }
 
@@ -1522,7 +1530,7 @@
 }
 
 .authFileTableQuotaMedium {
-  background: var(--warning-color);
+  background: var(--quota-medium-color, #e6a23c);
 }
 
 .authFileTableQuotaHigh {
@@ -1668,6 +1676,8 @@
   gap: 8px;
   flex: 0 0 auto;
   min-width: 0;
+  margin-top: auto;
+  justify-content: flex-end;
   padding: 0 2px;
 }
 
@@ -1680,6 +1690,56 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.cardStatsHeader {
+  flex: 0 0 auto;
+  gap: 4px;
+  margin-left: 2px;
+  flex-wrap: nowrap;
+}
+
+.cardStatsHeader .statPill {
+  padding: 3px 7px;
+  border-radius: 6px;
+}
+
+.cardStatsHeader .statLabel {
+  font-size: 10px;
+}
+
+.cardStatsHeader .statValue {
+  font-size: 11px;
+}
+
+.cardPlanBadge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  margin-left: auto;
+  padding: 3px 8px;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 28%, var(--border-color));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--primary-color) 8%, var(--bg-primary));
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.cardPlanLabel {
+  color: var(--text-tertiary);
+}
+
+.cardPlanValue {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--primary-color);
+  font-weight: 800;
 }
 
 .cardStatsCompact {
@@ -2237,8 +2297,8 @@
   }
 
   .fileName {
-    font-size: 13px;
-    line-height: 1.35;
+    font-size: 15px;
+    line-height: 1.45;
   }
 
   .cardMeta {

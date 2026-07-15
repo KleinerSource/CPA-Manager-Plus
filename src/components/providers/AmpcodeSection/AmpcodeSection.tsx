@@ -1,11 +1,11 @@
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import iconAmp from '@/assets/icons/amp.svg';
 import type { AmpcodeConfig } from '@/types';
 import { maskApiKey } from '@/utils/format';
 import styles from '@/features/aiProviders/AiProvidersPage.module.scss';
 import { useTranslation } from 'react-i18next';
 import { ModelTagList } from '../ModelTagList';
+import { FloatingProviderSection } from '../FloatingProviderSection';
 
 interface AmpcodeSectionProps {
   config: AmpcodeConfig | null | undefined;
@@ -27,7 +27,7 @@ export function AmpcodeSection({
 
   return (
     <>
-      <Card
+      <FloatingProviderSection
         title={
           <span className={styles.cardTitle}>
             <img src={iconAmp} alt="" className={styles.cardTitleIcon} />
@@ -81,7 +81,7 @@ export function AmpcodeSection({
             />
           </>
         )}
-      </Card>
+      </FloatingProviderSection>
     </>
   );
 }

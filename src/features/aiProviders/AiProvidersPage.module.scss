@@ -313,6 +313,26 @@ $openai-toolbar-control-height: 36px;
   border-radius: 0;
 }
 
+.providerToolbarAnchorHidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.providerFloatingToolbar {
+  position: fixed;
+  z-index: 20;
+  background: var(--bg-primary);
+  box-shadow: none;
+  overflow: visible;
+  padding: 0;
+}
+
+.providerFloatingToolbar :global(.card-header) {
+  margin-bottom: 0;
+  padding: $spacing-sm $spacing-lg;
+  border-radius: 0;
+}
+
 // 模型多选下拉框
 .modelMultiSelectWrapper {
   position: relative;
@@ -1119,10 +1139,6 @@ $openai-toolbar-control-height: 36px;
 
 .displayOptionsItem {
   display: flex;
-  justify-content: flex-end;
-}
-
-.listModeToolbar {
   align-items: center;
   justify-content: space-between;
   gap: $spacing-md;
