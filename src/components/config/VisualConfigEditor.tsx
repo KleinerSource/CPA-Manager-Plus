@@ -323,10 +323,7 @@ export function VisualConfigEditor({
         title: t('config_management.visual.sections.system.title'),
         description: t('config_management.visual.sections.system.description'),
         icon: IconDiamond,
-        errorCount: countErrors([
-          'logsMaxTotalSizeMb',
-          'errorLogsMaxFiles',
-        ]),
+        errorCount: countErrors(['logsMaxTotalSizeMb', 'errorLogsMaxFiles']),
       },
       {
         id: 'network',
@@ -972,6 +969,20 @@ export function VisualConfigEditor({
                   disabled={disabled}
                   onChange={(codexBugMode) => onChange({ codexBugMode })}
                 />
+                <Input
+                  label={t(
+                    'config_management.visual.sections.network.codex_compact_fallback_model'
+                  )}
+                  value={values.responsesCompactFallbackModel}
+                  placeholder="claude-sonnet-4-6"
+                  disabled={disabled}
+                  hint={t(
+                    'config_management.visual.sections.network.codex_compact_fallback_model_hint'
+                  )}
+                  onChange={(event) =>
+                    onChange({ responsesCompactFallbackModel: event.target.value })
+                  }
+                />
                 <ToggleRow
                   title={t('config_management.visual.sections.network.passthrough_headers')}
                   description={t(
@@ -1208,6 +1219,39 @@ export function VisualConfigEditor({
                   disabled={disabled}
                   hint={t(
                     'config_management.visual.sections.augment.codebase_retrieval_model_hint'
+                  )}
+                />
+              </SectionGrid>
+              <ToggleRow
+                title={t(
+                  'config_management.visual.sections.augment.use_configured_completion_models'
+                )}
+                description={t(
+                  'config_management.visual.sections.augment.use_configured_completion_models_desc'
+                )}
+                checked={values.augmentUseConfiguredCompletionModels}
+                disabled={disabled}
+                onChange={(augmentUseConfiguredCompletionModels) =>
+                  onChange({ augmentUseConfiguredCompletionModels })
+                }
+              />
+              <SectionGrid>
+                <Input
+                  label={t('config_management.visual.sections.augment.code_completion_model')}
+                  placeholder="gpt-5.4-mini"
+                  value={values.augmentCodeCompletionModel}
+                  onChange={(e) => onChange({ augmentCodeCompletionModel: e.target.value })}
+                  disabled={disabled || !values.augmentUseConfiguredCompletionModels}
+                  hint={t('config_management.visual.sections.augment.code_completion_model_hint')}
+                />
+                <Input
+                  label={t('config_management.visual.sections.augment.chat_input_completion_model')}
+                  placeholder="claude-haiku-4-5"
+                  value={values.augmentChatInputCompletionModel}
+                  onChange={(e) => onChange({ augmentChatInputCompletionModel: e.target.value })}
+                  disabled={disabled || !values.augmentUseConfiguredCompletionModels}
+                  hint={t(
+                    'config_management.visual.sections.augment.chat_input_completion_model_hint'
                   )}
                 />
               </SectionGrid>

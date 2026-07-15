@@ -53,11 +53,7 @@ const getCodexResetQuotaState = (quota: unknown): CodexResetQuotaState | null =>
   return quota as CodexResetQuotaState;
 };
 
-const buildResetQuotaConfirmMessage = (
-  file: AuthFileItem,
-  quota: unknown,
-  t: TFunction
-) => {
+const buildResetQuotaConfirmMessage = (file: AuthFileItem, quota: unknown, t: TFunction) => {
   const resetQuota = getCodexResetQuotaState(quota);
   const count = resetQuota?.rateLimitResetCreditsAvailableCount;
   const credits = resetQuota?.rateLimitResetCredits ?? [];
@@ -159,7 +155,7 @@ const useQuotaPagination = <T,>(items: T[], defaultPageSize = 6): QuotaPaginatio
     goToNext,
     loading,
     loadingScope,
-    setLoading
+    setLoading,
   };
 };
 
@@ -178,7 +174,7 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
   loading,
   disabled,
   searchQuery = '',
-  sortMode = 'default'
+  sortMode = 'default',
 }: QuotaSectionProps<TState, TData>) {
   const { t } = useTranslation();
   const resolvedTheme: ResolvedTheme = useThemeStore((state) => state.resolvedTheme);
@@ -195,10 +191,10 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
   const [forceShowAll, setForceShowAll] = useState(false);
   const [resettingQuotaName, setResettingQuotaName] = useState<string | null>(null);
 
-  const filteredFiles = useMemo(() => files.filter((file) => config.filterFn(file)), [
-    files,
-    config
-  ]);
+  const filteredFiles = useMemo(
+    () => files.filter((file) => config.filterFn(file)),
+    [files, config]
+  );
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
 
   const { quota, loadQuota } = useQuotaLoader(config);
@@ -218,7 +214,7 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
         fileQuota?.status,
         fileQuota?.error,
         fileQuota?.errorStatus,
-        ...(config.getSearchText?.(file, fileQuota, t) ?? [])
+        ...(config.getSearchText?.(file, fileQuota, t) ?? []),
       ];
 
       return stringifySearchValue(searchValues).some((value) =>
@@ -244,8 +240,7 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
         if (leftKnown || rightKnown) {
           if (!leftKnown) return 1;
           if (!rightKnown) return -1;
-          const rankDiff =
-            sortMode === 'plan-desc' ? rightRank - leftRank : leftRank - rightRank;
+          const rankDiff = sortMode === 'plan-desc' ? rightRank - leftRank : leftRank - rightRank;
           if (rankDiff !== 0) return rankDiff;
         }
 
@@ -282,7 +277,7 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
     goToPrev,
     goToNext,
     loading: sectionLoading,
-    setLoading
+    setLoading,
   } = useQuotaPagination(displayFiles);
 
   useEffect(() => {
@@ -359,14 +354,14 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
 
       setQuota((prev) => ({
         ...prev,
-        [file.name]: config.buildLoadingState()
+        [file.name]: config.buildLoadingState(),
       }));
 
       try {
         const data = await config.fetchQuota(file, t);
         setQuota((prev) => ({
           ...prev,
-          [file.name]: config.buildSuccessState(data)
+          [file.name]: config.buildSuccessState(data),
         }));
         showNotification(t('auth_files.quota_refresh_success', { name: file.name }), 'success');
       } catch (err: unknown) {
@@ -374,7 +369,7 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
         const status = getStatusFromError(err);
         setQuota((prev) => ({
           ...prev,
-          [file.name]: config.buildErrorState(message, status)
+          [file.name]: config.buildErrorState(message, status),
         }));
         showNotification(
           t('auth_files.quota_refresh_failed', { name: file.name, message }),
@@ -405,31 +400,19 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
             const data = await resetQuota(file, t);
             setQuota((prev) => ({
               ...prev,
-              [file.name]: config.buildSuccessState(data)
+              [file.name]: config.buildSuccessState(data),
             }));
             showNotification(t('codex_quota.reset_success', { key: file.name }), 'success');
           } catch (err: unknown) {
             const message = err instanceof Error ? err.message : t('common.unknown_error');
-            showNotification(
-              t('codex_quota.reset_failed', { key: file.name, message }),
-              'error'
-            );
+            showNotification(t('codex_quota.reset_failed', { key: file.name, message }), 'error');
           } finally {
             setResettingQuotaName((current) => (current === file.name ? null : current));
           }
-        }
+        },
       });
     },
-    [
-      config,
-      disabled,
-      quota,
-      resettingQuotaName,
-      setQuota,
-      showConfirmation,
-      showNotification,
-      t
-    ]
+    [config, disabled, quota, resettingQuotaName, setQuota, showConfirmation, showNotification, t]
   );
 
   const titleNode = (
@@ -521,29 +504,28 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
               const hasQuotaResetCredits =
                 typeof quotaResetCreditsAvailableCount === 'number' &&
                 quotaResetCreditsAvailableCount > 0;
-              const canUseQuotaAction =
-                !disabled &&
-                !item.disabled &&
-                itemQuota?.status !== 'loading' &&
-                hasQuotaResetCredits;
+              const canRefreshQuota =
+                !disabled && !item.disabled && itemQuota?.status !== 'loading' && !isResettingQuota;
+              const canResetQuota = canRefreshQuota && hasQuotaResetCredits;
               const showResetQuotaAction =
                 itemQuota !== undefined && Boolean(config.canResetQuota?.(itemQuota));
-              const resetQuotaAction = config.resetQuota && showResetQuotaAction ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className={styles.quotaResetCreditButton}
-                  onClick={() => resetQuotaForFile(item)}
-                  disabled={!canUseQuotaAction || isResettingQuota}
-                  loading={isResettingQuota}
-                  title={t('codex_quota.reset_button')}
-                  aria-label={t('codex_quota.reset_button')}
-                >
-                  {!isResettingQuota && <IconRefreshCw size={14} />}
-                  {t('codex_quota.reset_button')}
-                </Button>
-              ) : undefined;
+              const resetQuotaAction =
+                config.resetQuota && showResetQuotaAction ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className={styles.quotaResetCreditButton}
+                    onClick={() => resetQuotaForFile(item)}
+                    disabled={!canResetQuota}
+                    loading={isResettingQuota}
+                    title={t('codex_quota.reset_button')}
+                    aria-label={t('codex_quota.reset_button')}
+                  >
+                    {!isResettingQuota && <IconRefreshCw size={14} />}
+                    {t('codex_quota.reset_button')}
+                  </Button>
+                ) : undefined;
 
               return (
                 <QuotaCard
@@ -555,7 +537,7 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
                   cardIdleMessageKey={config.cardIdleMessageKey}
                   cardClassName={config.cardClassName}
                   defaultType={config.type}
-                  canRefresh={canUseQuotaAction && !isResettingQuota}
+                  canRefresh={canRefreshQuota}
                   onRefresh={() => void refreshQuotaForFile(item)}
                   resetQuotaAction={resetQuotaAction}
                   renderQuotaItems={config.renderQuotaItems}
@@ -565,19 +547,14 @@ export function QuotaSection<TState extends QuotaStatusState, TData>({
           </div>
           {displayFiles.length > pageSize && effectiveViewMode === 'paged' && (
             <div className={styles.pagination}>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={goToPrev}
-                disabled={currentPage <= 1}
-              >
+              <Button variant="secondary" size="sm" onClick={goToPrev} disabled={currentPage <= 1}>
                 {t('auth_files.pagination_prev')}
               </Button>
               <div className={styles.pageInfo}>
                 {t('auth_files.pagination_info', {
                   current: currentPage,
                   total: totalPages,
-                  count: displayFiles.length
+                  count: displayFiles.length,
                 })}
               </div>
               <Button

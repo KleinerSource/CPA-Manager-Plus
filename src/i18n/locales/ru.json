@@ -1305,6 +1305,7 @@
     "candidate_confirmed": "Candidate price confirmed",
     "add_manual": "Add manually",
     "unmatched_title": "Unmatched models",
+    "gpt56_policy_note": "GPT-5.6 Sol, Terra и Luna используют единые правила тарификации: запись кэша стоит 1,25x от цены входных токенов. Если сумма обычного ввода, чтения и записи кэша превышает 272 000 токенов, весь ввод тарифицируется с множителем 2x, а вывод — 1,5x.",
     "empty": "No matching model prices"
   },
   "usage_stats": {
@@ -1556,9 +1557,9 @@
     "zero_token_model_calls": "Вызовы моделей с нулевыми токенами",
     "zero_token_model_calls_hint": "Помогает выявлять изображения и другие модели с не-токенной тарификацией.",
     "token_signal_title": "Сигнал токенов",
-    "token_signal_desc": "Показывает отдельно input, output, reasoning и cache reuse, чтобы вместе видеть структуру расходов и эффективность кэша.",
-    "input_tokens": "Входные токены",
-    "input_tokens_short": "Вход",
+    "token_signal_desc": "Показывает отдельно фактический ввод, вывод, рассуждения, чтение и запись кэша. Доля попаданий равна чтению кэша, делённому на сумму фактического ввода, чтения и записи кэша.",
+    "input_tokens": "Токены фактического ввода",
+    "input_tokens_short": "Факт. ввод",
     "output_tokens": "Выходные токены",
     "output_tokens_short": "Выход",
     "reasoning_tokens": "Токены рассуждения",

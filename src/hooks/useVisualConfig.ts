@@ -465,6 +465,7 @@ function getNextDirtyFields(
       'disableCooling',
       'disableAutoDisable',
       'disableImageGeneration',
+      'responsesCompactFallbackModel',
       'authAutoRefreshWorkers',
       'enableGeminiCliEndpoint',
       'antigravitySignatureCacheEnabled',
@@ -482,6 +483,9 @@ function getNextDirtyFields(
       'augmentSilentModeModel',
       'augmentImageFallbackModel',
       'augmentCodebaseRetrievalModel',
+      'augmentUseConfiguredCompletionModels',
+      'augmentCodeCompletionModel',
+      'augmentChatInputCompletionModel',
       'augmentShowThinkingProgress',
       'kiroPerAccountRpmLimit',
       'kiroFreeRpmLimit',
@@ -800,6 +804,10 @@ export function useVisualConfig() {
 
         proxyUrl: typeof parsed['proxy-url'] === 'string' ? parsed['proxy-url'] : '',
         forceModelPrefix: Boolean(parsed['force-model-prefix']),
+        responsesCompactFallbackModel:
+          typeof codex?.['responses-compact-fallback-model'] === 'string'
+            ? codex['responses-compact-fallback-model']
+            : '',
         codexForceSuperCategory: Boolean(codex?.['force-super-category']),
         codexBugMode: Boolean(codex?.['bug-mode'] ?? codex?.bugMode),
         passthroughHeaders: Boolean(parsed['passthrough-headers']),
@@ -857,9 +865,7 @@ export function useVisualConfig() {
 
         routingStrategy: routing?.strategy === 'fill-first' ? 'fill-first' : 'round-robin',
         routingSessionAffinity: Boolean(
-          routing?.['session-affinity'] ??
-            routing?.sessionAffinity ??
-            routing?.['sessionAffinity']
+          routing?.['session-affinity'] ?? routing?.sessionAffinity ?? routing?.['sessionAffinity']
         ),
         routingSessionAffinityTTL:
           typeof routing?.['session-affinity-ttl'] === 'string'
@@ -882,6 +888,18 @@ export function useVisualConfig() {
           typeof augment?.['codebase-retrieval-model'] === 'string'
             ? augment['codebase-retrieval-model']
             : DEFAULT_VISUAL_VALUES.augmentCodebaseRetrievalModel,
+        augmentUseConfiguredCompletionModels: Boolean(
+          augment?.['use-configured-completion-models'] ??
+          DEFAULT_VISUAL_VALUES.augmentUseConfiguredCompletionModels
+        ),
+        augmentCodeCompletionModel:
+          typeof augment?.['code-completion-model'] === 'string'
+            ? augment['code-completion-model']
+            : DEFAULT_VISUAL_VALUES.augmentCodeCompletionModel,
+        augmentChatInputCompletionModel:
+          typeof augment?.['chat-input-completion-model'] === 'string'
+            ? augment['chat-input-completion-model']
+            : DEFAULT_VISUAL_VALUES.augmentChatInputCompletionModel,
         augmentShowThinkingProgress: Boolean(
           augment?.['show-thinking-progress'] ?? DEFAULT_VISUAL_VALUES.augmentShowThinkingProgress
         ),
@@ -911,7 +929,7 @@ export function useVisualConfig() {
         ),
         kiroInvalidAuthAutoDisable: Boolean(
           kiroRequestPolicy?.['invalid-auth-auto-disable'] ??
-            DEFAULT_VISUAL_VALUES.kiroInvalidAuthAutoDisable
+          DEFAULT_VISUAL_VALUES.kiroInvalidAuthAutoDisable
         ),
 
         usageModels: parseUsageModels(parsed['usage-models']),
@@ -1114,8 +1132,10 @@ export function useVisualConfig() {
           values.codexIdentityConfuse ||
           values.codexForceSuperCategory ||
           values.codexBugMode ||
+          values.responsesCompactFallbackModel.trim() ||
           dirtyFields.has('codexForceSuperCategory') ||
           dirtyFields.has('codexBugMode') ||
+          dirtyFields.has('responsesCompactFallbackModel') ||
           dirtyFields.has('codexIdentityConfuse')
         ) {
           ensureMapInDoc(doc, ['codex']);
@@ -1135,11 +1155,7 @@ export function useVisualConfig() {
             dirtyFields.has('codexForceSuperCategory') ||
             docHas(doc, ['codex', 'force-super-category'])
           ) {
-            setBooleanInDoc(
-              doc,
-              ['codex', 'force-super-category'],
-              values.codexForceSuperCategory
-            );
+            setBooleanInDoc(doc, ['codex', 'force-super-category'], values.codexForceSuperCategory);
           }
           if (
             values.codexBugMode ||
@@ -1147,6 +1163,20 @@ export function useVisualConfig() {
             docHas(doc, ['codex', 'bug-mode'])
           ) {
             setBooleanInDoc(doc, ['codex', 'bug-mode'], values.codexBugMode);
+          }
+          if (
+            shouldWriteManagedField(
+              doc,
+              ['codex', 'responses-compact-fallback-model'],
+              dirtyFields,
+              'responsesCompactFallbackModel'
+            )
+          ) {
+            setStringInDoc(
+              doc,
+              ['codex', 'responses-compact-fallback-model'],
+              values.responsesCompactFallbackModel
+            );
           }
           deleteIfMapEmpty(doc, ['codex']);
         }
@@ -1172,10 +1202,7 @@ export function useVisualConfig() {
           doc.setIn(['quota-exceeded', 'switch-project'], values.quotaSwitchProject);
           doc.setIn(['quota-exceeded', 'switch-preview-model'], values.quotaSwitchPreviewModel);
           if (writeQuotaAntigravityCredits) {
-            doc.setIn(
-              ['quota-exceeded', 'antigravity-credits'],
-              values.quotaAntigravityCredits
-            );
+            doc.setIn(['quota-exceeded', 'antigravity-credits'], values.quotaAntigravityCredits);
           }
           deleteIfMapEmpty(doc, ['quota-exceeded']);
         }
@@ -1202,6 +1229,9 @@ export function useVisualConfig() {
           dirtyFields.has('augmentSilentModeModel') ||
           dirtyFields.has('augmentImageFallbackModel') ||
           dirtyFields.has('augmentCodebaseRetrievalModel') ||
+          dirtyFields.has('augmentUseConfiguredCompletionModels') ||
+          dirtyFields.has('augmentCodeCompletionModel') ||
+          dirtyFields.has('augmentChatInputCompletionModel') ||
           dirtyFields.has('augmentShowThinkingProgress');
         if (shouldWriteAugment) {
           ensureMapInDoc(doc, ['augment']);
@@ -1215,6 +1245,29 @@ export function useVisualConfig() {
             doc,
             ['augment', 'codebase-retrieval-model'],
             values.augmentCodebaseRetrievalModel
+          );
+          if (
+            shouldWriteManagedField(
+              doc,
+              ['augment', 'use-configured-completion-models'],
+              dirtyFields,
+              'augmentUseConfiguredCompletionModels'
+            )
+          ) {
+            doc.setIn(
+              ['augment', 'use-configured-completion-models'],
+              values.augmentUseConfiguredCompletionModels
+            );
+          }
+          setStringInDoc(
+            doc,
+            ['augment', 'code-completion-model'],
+            values.augmentCodeCompletionModel
+          );
+          setStringInDoc(
+            doc,
+            ['augment', 'chat-input-completion-model'],
+            values.augmentChatInputCompletionModel
           );
           if (
             shouldWriteManagedField(

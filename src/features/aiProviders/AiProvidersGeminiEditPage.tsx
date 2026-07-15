@@ -237,7 +237,7 @@ export function AiProvidersGeminiEditPage() {
         selectedModels.forEach((model) => {
           const name = stripGeminiModelResourceName(model.name);
           if (!name || mergedMap.has(name)) return;
-          mergedMap.set(name, { name, alias: model.alias ?? '' });
+          mergedMap.set(name, { name, alias: name });
           addedCount += 1;
         });
 

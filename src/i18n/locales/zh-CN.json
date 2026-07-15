@@ -1317,6 +1317,7 @@
     "candidate_confirmed": "候选价格已确认",
     "add_manual": "手动添加",
     "unmatched_title": "未匹配模型",
+    "gpt56_policy_note": "GPT-5.6 Sol、Terra、Luna 使用同一计费规则：缓存写入按输入价的 1.25 倍计费；普通输入、缓存读取和缓存写入合计超过 272,000 Tokens 时，整次输入侧按 2 倍、输出侧按 1.5 倍计费。",
     "empty": "没有符合条件的模型价格"
   },
   "usage_stats": {
@@ -1548,9 +1549,9 @@
     "zero_token_model_calls": "零 Token 模型调用",
     "zero_token_model_calls_hint": "用于识别图片类或其他非纯 Token 计费模型。",
     "token_signal_title": "Token 信号",
-    "token_signal_desc": "把输入、输出、推理与缓存复用拆开看，判断真实消耗结构与缓存效率。",
-    "input_tokens": "输入 Tokens",
-    "input_tokens_short": "输入",
+    "token_signal_desc": "把实际输入、输出、推理与缓存读写拆开看；缓存命中率按缓存读取 ÷（实际输入 + 缓存读取 + 缓存写入）计算。",
+    "input_tokens": "实际输入 Tokens",
+    "input_tokens_short": "实际输入",
     "output_tokens": "输出 Tokens",
     "output_tokens_short": "输出",
     "reasoning_tokens": "推理 Tokens",
@@ -2244,7 +2245,9 @@
           "ws_auth": "WebSocket 认证",
           "ws_auth_desc": "启用 WebSocket 连接认证 (/v1/ws)",
           "enable_gemini_cli_endpoint": "启用 Gemini CLI 内部端点",
-          "enable_gemini_cli_endpoint_desc": "启用 /v1internal:* 兼容端点"
+          "enable_gemini_cli_endpoint_desc": "启用 /v1internal:* 兼容端点",
+          "codex_compact_fallback_model": "Codex App 压缩回退模型",
+          "codex_compact_fallback_model_hint": "当 Codex App 请求 /responses/compact，而当前凭证没有原生压缩接口时，通过普通 Responses 链路生成上下文摘要。留空使用当前聊天模型；填写后使用指定模型，例如 Claude 模型。"
         },
         "quota": {
           "title": "配额回退",
@@ -2265,6 +2268,12 @@
           "image_fallback_model_hint": "图片模型不可用时使用的备用模型",
           "codebase_retrieval_model": "代码库检索模型",
           "codebase_retrieval_model_hint": "Augment codebase-retrieval 请求调用的大模型",
+          "use_configured_completion_models": "使用自定义补全模型",
+          "use_configured_completion_models_desc": "开启后使用下方配置的代码补全和聊天输入补全模型",
+          "code_completion_model": "代码补全模型",
+          "code_completion_model_hint": "Augment 代码补全请求调用的模型",
+          "chat_input_completion_model": "聊天输入补全模型",
+          "chat_input_completion_model_hint": "Augment 聊天输入补全请求调用的模型",
           "show_thinking_progress": "显示思考进度",
           "show_thinking_progress_desc": "允许 Augment 请求展示 thinking progress"
         },

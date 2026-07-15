@@ -41,6 +41,56 @@ const mountUseVisualConfig = (): UseVisualConfigHarness => {
 };
 
 describe('useVisualConfig', () => {
+  it('round-trips the Responses compact fallback model', () => {
+    const harness = mountUseVisualConfig();
+    const yaml = ['codex:', '  responses-compact-fallback-model: claude-sonnet-4-6', ''].join(
+      '\n'
+    );
+
+    act(() => {
+      const result = harness.getCurrent().loadVisualValuesFromYaml(yaml);
+      expect(result.ok).toBe(true);
+    });
+    expect(harness.getCurrent().visualValues.responsesCompactFallbackModel).toBe(
+      'claude-sonnet-4-6'
+    );
+
+    act(() => {
+      harness
+        .getCurrent()
+        .setVisualValues({ responsesCompactFallbackModel: 'claude-opus-4-6' });
+    });
+
+    const savedYaml = harness.getCurrent().applyVisualChangesToYaml(yaml);
+    expect(savedYaml).toContain('codex:');
+    expect(savedYaml).toContain('responses-compact-fallback-model: claude-opus-4-6');
+
+    harness.unmount();
+  });
+
+  it('defaults configured completion models to disabled', () => {
+    const harness = mountUseVisualConfig();
+    const yaml = [
+      'augment:',
+      '  code-completion-model: gpt-5.4-mini',
+      '  chat-input-completion-model: claude-haiku-4-5',
+      '',
+    ].join('\n');
+
+    act(() => {
+      const result = harness.getCurrent().loadVisualValuesFromYaml(yaml);
+      expect(result.ok).toBe(true);
+    });
+
+    expect(harness.getCurrent().visualValues.augmentUseConfiguredCompletionModels).toBe(false);
+    expect(harness.getCurrent().visualValues.augmentCodeCompletionModel).toBe('gpt-5.4-mini');
+    expect(harness.getCurrent().visualValues.augmentChatInputCompletionModel).toBe(
+      'claude-haiku-4-5'
+    );
+
+    harness.unmount();
+  });
+
   it('round-trips plugin system toggle', () => {
     const harness = mountUseVisualConfig();
     const yaml = ['plugins:', '  enabled: false', '  dir: plugins', ''].join('\n');
@@ -153,6 +203,9 @@ describe('useVisualConfig', () => {
       '  silent-mode-model: gpt-5.5',
       '  image-fallback-model: qwen3.5-plus',
       '  codebase-retrieval-model: claude-sonnet-4-5',
+      '  use-configured-completion-models: true',
+      '  code-completion-model: gpt-5.4-mini',
+      '  chat-input-completion-model: claude-haiku-4-5',
       'kiro-request-policy:',
       '  per-account-rpm-limit: 20',
       '  rpm-limits:',
@@ -176,11 +229,19 @@ describe('useVisualConfig', () => {
     expect(harness.getCurrent().visualValues.augmentCodebaseRetrievalModel).toBe(
       'claude-sonnet-4-5'
     );
+    expect(harness.getCurrent().visualValues.augmentUseConfiguredCompletionModels).toBe(true);
+    expect(harness.getCurrent().visualValues.augmentCodeCompletionModel).toBe('gpt-5.4-mini');
+    expect(harness.getCurrent().visualValues.augmentChatInputCompletionModel).toBe(
+      'claude-haiku-4-5'
+    );
     expect(harness.getCurrent().visualValues.kiroProRpmLimit).toBe('60');
 
     act(() => {
       harness.getCurrent().setVisualValues({
         augmentCodebaseRetrievalModel: 'gpt-5.5',
+        augmentUseConfiguredCompletionModels: false,
+        augmentCodeCompletionModel: 'gpt-5.6-luna',
+        augmentChatInputCompletionModel: 'gpt-5.4-mini',
         augmentShowThinkingProgress: true,
         kiroCooldownStrategy: 'exponential',
       });
@@ -188,6 +249,9 @@ describe('useVisualConfig', () => {
 
     const savedYaml = harness.getCurrent().applyVisualChangesToYaml(yaml);
     expect(savedYaml).toContain('codebase-retrieval-model: gpt-5.5');
+    expect(savedYaml).toContain('use-configured-completion-models: false');
+    expect(savedYaml).toContain('code-completion-model: gpt-5.6-luna');
+    expect(savedYaml).toContain('chat-input-completion-model: gpt-5.4-mini');
     expect(savedYaml).toContain('show-thinking-progress: true');
     expect(savedYaml).toContain('cooldown-strategy: exponential');
 
@@ -226,11 +290,13 @@ describe('useVisualConfig', () => {
 
     act(() => {
       harness.getCurrent().setVisualValues({
-        usageModels: harness.getCurrent().visualValues.usageModels.map((model) =>
-          model.name === 'old-model'
-            ? { ...model, modelGroupPriority: 0, priority: 2, isDefault: false }
-            : model
-        ),
+        usageModels: harness
+          .getCurrent()
+          .visualValues.usageModels.map((model) =>
+            model.name === 'old-model'
+              ? { ...model, modelGroupPriority: 0, priority: 2, isDefault: false }
+              : model
+          ),
       });
     });
 

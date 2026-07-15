@@ -297,7 +297,7 @@ export function AiProvidersCodexEditPage() {
           if (!name) return;
           const key = name.toLowerCase();
           if (mergedMap.has(key)) return;
-          mergedMap.set(key, { name, alias: model.alias ?? '' });
+          mergedMap.set(key, { name, alias: name });
           addedCount += 1;
         });
 

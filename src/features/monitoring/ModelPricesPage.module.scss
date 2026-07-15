@@ -205,6 +205,16 @@
   gap: 6px;
 }
 
+.pricingPolicyNote {
+  border-left: 3px solid var(--pricing-accent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--pricing-accent) 7%, var(--pricing-surface));
+  color: var(--pricing-muted);
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
 .sourceResults span {
   display: inline-flex;
   align-items: center;
