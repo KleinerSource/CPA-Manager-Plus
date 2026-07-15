@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import type { AuthFileItem, CodexQuotaState } from '@/types';
+import type { AuthFileItem, CodexQuotaState, CodexQuotaWindow } from '@/types';
 import {
   normalizePlanType,
   resolveCodexChatgptAccountId,
@@ -81,6 +81,40 @@ export type AuthFileCodexStatusSummary = {
   weeklyUsedPercent: number | null;
   monthlyUsedPercent: number | null;
   badges: AuthFileCodexStatusBadge[];
+};
+
+export const getCodexTableQuotaWindows = (
+  quota: CodexQuotaState | undefined,
+  codexStatus: AuthFileCodexStatusSummary
+): CodexQuotaWindow[] => {
+  if (quota?.windows.length) return quota.windows;
+
+  return [
+    {
+      id: 'five-hour',
+      label: '',
+      labelKey: 'auth_files.table_quota_five_hour',
+      usedPercent: codexStatus.fiveHourUsedPercent,
+      resetLabel: codexStatus.fiveHourResetLabel ?? '-',
+      limitWindowSeconds: CODEX_FIVE_HOUR_WINDOW_SECONDS,
+    },
+    {
+      id: 'weekly',
+      label: '',
+      labelKey: 'auth_files.table_quota_weekly',
+      usedPercent: codexStatus.weeklyUsedPercent,
+      resetLabel: codexStatus.weeklyResetLabel ?? '-',
+      limitWindowSeconds: CODEX_WEEKLY_WINDOW_SECONDS,
+    },
+    {
+      id: 'monthly',
+      label: '',
+      labelKey: 'codex_quota.monthly_window',
+      usedPercent: codexStatus.monthlyUsedPercent,
+      resetLabel: codexStatus.monthlyResetLabel ?? '-',
+      limitWindowSeconds: CODEX_MONTHLY_WINDOW_SECONDS,
+    },
+  ].filter((window) => window.usedPercent !== null || window.resetLabel !== '-');
 };
 
 export type AuthFileCodexInspectionSnapshot = {

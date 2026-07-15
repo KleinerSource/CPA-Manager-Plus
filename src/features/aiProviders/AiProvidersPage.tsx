@@ -28,9 +28,11 @@ import { Button } from '@/components/ui/Button';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import { IconPlus, IconSlidersHorizontal } from '@/components/ui/icons';
 import { useHeaderRefresh } from '@/hooks/useHeaderRefresh';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { ampcodeApi, providersApi } from '@/services/api';
 import { useAuthStore, useConfigStore, useNotificationStore, useThemeStore } from '@/stores';
 import { statusBarDataFromRecentRequests } from '@/utils/recentRequests';
+import { STORAGE_KEY_AI_PROVIDERS_LIST_MODE } from '@/utils/constants';
 import type { GeminiKeyConfig, OpenAIProviderConfig, ProviderKeyConfig } from '@/types';
 import {
   AiProvidersUnifiedTable,
@@ -64,7 +66,7 @@ export function AiProvidersPage() {
   const hasMounted = useRef(false);
   const [loading, setLoading] = useState(() => !isCacheValid());
   const [error, setError] = useState('');
-  const [listMode, setListMode] = useState(false);
+  const [listMode, setListMode] = useLocalStorage(STORAGE_KEY_AI_PROVIDERS_LIST_MODE, false);
   const [addProviderModalOpen, setAddProviderModalOpen] = useState(false);
 
   const [geminiKeys, setGeminiKeys] = useState<GeminiKeyConfig[]>(

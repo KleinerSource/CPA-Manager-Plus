@@ -721,7 +721,7 @@
     "disabled_filter_only": "仅显示已停用凭证",
     "healthy_filter_only": "仅显示正常凭证",
     "display_options_label": "显示选项",
-    "layout_mode_table_toggle": "表格模式",
+    "layout_mode_list_toggle": "列表模式",
     "table_select": "选择",
     "table_name": "文件名",
     "table_type_plan": "类型 / 套餐",

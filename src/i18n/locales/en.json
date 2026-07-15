@@ -726,7 +726,7 @@
     "disabled_filter_only": "Only show disabled credentials",
     "healthy_filter_only": "Only show healthy credentials",
     "display_options_label": "Display options",
-    "layout_mode_table_toggle": "Table mode",
+    "layout_mode_list_toggle": "List mode",
     "table_select": "Select",
     "table_name": "File name",
     "table_type_plan": "Type / Plan",

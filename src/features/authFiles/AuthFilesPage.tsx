@@ -1207,8 +1207,8 @@ export function AuthFilesPage() {
                             <ToggleSwitch
                               checked={layoutMode === 'table'}
                               onChange={(value) => setLayoutMode(value ? 'table' : 'card')}
-                              ariaLabel={t('auth_files.layout_mode_table_toggle')}
-                              label={t('auth_files.layout_mode_table_toggle')}
+                              ariaLabel={t('auth_files.layout_mode_list_toggle')}
+                              label={t('auth_files.layout_mode_list_toggle')}
                             />
                           </div>
                         ),

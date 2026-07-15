@@ -725,6 +725,7 @@
     "disabled_filter_only": "Показывать только отключённые учётные данные",
     "healthy_filter_only": "Показывать только исправные учётные данные",
     "display_options_label": "Параметры отображения",
+    "layout_mode_list_toggle": "Режим списка",
     "compact_mode_label": "Компактный режим",
     "hide_errors_label": "Скрыть ошибки",
     "sort_label": "Сортировка",

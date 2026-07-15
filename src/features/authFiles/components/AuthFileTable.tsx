@@ -30,6 +30,7 @@ import {
 } from '@/features/authFiles/components/AuthFileQuotaSection';
 import {
   getAuthFilePlanLabel,
+  getCodexTableQuotaWindows,
   type AuthFileCodexStatusBadge,
   type AuthFileCodexStatusSummary,
 } from '@/features/authFiles/model/authFilesPageModel';
@@ -372,18 +373,14 @@ function AuthFileTableQuotaCell({
   return (
     <div className={styles.authFileTableQuotaStack}>
       {quotaType === 'codex' ? (
-        <>
+        getCodexTableQuotaWindows(quota as CodexQuotaState | undefined, codexStatus).map((window) => (
           <QuotaProgress
-            label={t('auth_files.table_quota_five_hour')}
-            percent={toRemainingQuotaPercent(codexStatus.fiveHourUsedPercent)}
-            resetLabel={codexStatus.fiveHourResetLabel}
+            key={window.id}
+            label={window.labelKey ? t(window.labelKey, window.labelParams) : window.label}
+            percent={toRemainingQuotaPercent(window.usedPercent)}
+            resetLabel={window.resetLabel}
           />
-          <QuotaProgress
-            label={t('auth_files.table_quota_weekly')}
-            percent={toRemainingQuotaPercent(codexStatus.weeklyUsedPercent)}
-            resetLabel={codexStatus.weeklyResetLabel}
-          />
-        </>
+        ))
       ) : null}
     </div>
   );

@@ -713,7 +713,7 @@
     "disabled_filter_only": "僅顯示已停用憑證",
     "healthy_filter_only": "僅顯示正常憑證",
     "display_options_label": "顯示選項",
-    "layout_mode_table_toggle": "表格模式",
+    "layout_mode_list_toggle": "列表模式",
     "table_select": "選擇",
     "table_name": "檔案名稱",
     "table_type_plan": "類型 / 套餐",
