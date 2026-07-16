@@ -63,6 +63,7 @@ const sidebarIcons: Record<string, ReactNode> = {
   quota: <IconSidebarQuota size={SIDEBAR_ICON_SIZE} />,
   codexInspection: <IconSidebarInspection size={SIDEBAR_ICON_SIZE} />,
   monitoring: <IconSidebarMonitor size={SIDEBAR_ICON_SIZE} />,
+  usageAnalytics: <IconSidebarUsage size={SIDEBAR_ICON_SIZE} />,
   modelPrices: <IconSidebarUsage size={SIDEBAR_ICON_SIZE} />,
   plugins: <IconSidebarPlugins size={SIDEBAR_ICON_SIZE} />,
   pluginStore: <IconSidebarStore size={SIDEBAR_ICON_SIZE} />,
@@ -514,6 +515,15 @@ export function MainLayout() {
             label: t('nav.monitoring_center'),
             shortLabel: navShortLabel('nav.monitoring_center', t('nav.monitoring_center')),
             icon: sidebarIcons.monitoring,
+          },
+          {
+            path: '/usage-analytics',
+            label: t('nav.usage_analytics', { defaultValue: '使用分析' }),
+            shortLabel: navShortLabel(
+              'nav.usage_analytics',
+              t('nav.usage_analytics', { defaultValue: '使用分析' })
+            ),
+            icon: sidebarIcons.usageAnalytics,
           },
         ]
       : []),

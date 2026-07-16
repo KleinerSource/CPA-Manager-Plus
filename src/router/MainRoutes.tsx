@@ -21,6 +21,7 @@ import { PluginResourcePage } from '@/features/plugins/PluginResourcePage';
 import { PluginsPage } from '@/features/plugins/PluginsPage';
 import { PluginStorePage } from '@/features/plugins/PluginStorePage';
 import { MonitoringCenterPage } from '@/pages/MonitoringCenterPage';
+import { UsageAnalyticsPage } from '@/pages/UsageAnalyticsPage';
 import { ModelPricesPage } from '@/pages/ModelPricesPage';
 import { CodexInspectionPage } from '@/pages/CodexInspectionPage';
 import { ConfigPage } from '@/pages/ConfigPage';
@@ -165,6 +166,14 @@ const createMainRoutes = (supportsPlugin: boolean) => [
     ),
   },
   {
+    path: '/usage-analytics',
+    element: (
+      <FeatureGate feature="requestMonitoring">
+        <UsageAnalyticsPage />
+      </FeatureGate>
+    ),
+  },
+  {
     path: '/monitoring/model-prices',
     element: (
       <FeatureGate feature="modelPrices">
@@ -173,7 +182,10 @@ const createMainRoutes = (supportsPlugin: boolean) => [
     ),
   },
   { path: '/monitoring/codex-inspection', element: <Navigate to="/codex-inspection" replace /> },
-  { path: '/monitoring/codex-inspection/server', element: <Navigate to="/codex-inspection" replace /> },
+  {
+    path: '/monitoring/codex-inspection/server',
+    element: <Navigate to="/codex-inspection" replace />,
+  },
   { path: '/config', element: <ConfigPage /> },
   {
     path: '/logs',

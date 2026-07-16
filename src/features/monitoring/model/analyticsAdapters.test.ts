@@ -25,6 +25,7 @@ describe('buildUsageDetailsFromAnalyticsEvents', () => {
         endpoint: 'POST /v1/chat/completions',
         method: 'POST',
         path: '/v1/chat/completions',
+        provider: 'codex',
         auth_index: 'auth-1',
         source: 'source.json',
         source_hash: 'source-hash',
@@ -78,6 +79,7 @@ describe('buildUsageDetailsFromAnalyticsEvents', () => {
         endpoint: 'POST /v1/chat/completions',
         method: 'POST',
         path: '/v1/chat/completions',
+        provider: 'codex',
         auth_index: 'auth-1',
         source: 'source.json',
         source_hash: 'source-hash',
@@ -296,7 +298,7 @@ describe('buildFilterOptionsFromAnalytics', () => {
         channel_share: [
           {
             auth_index: 'auth-1',
-            auth_provider_snapshot: 'codex',
+            provider: 'codex',
             calls: 1,
             success: 1,
             failure: 0,
@@ -306,7 +308,7 @@ describe('buildFilterOptionsFromAnalytics', () => {
           },
           {
             auth_index: 'auth-2',
-            auth_provider_snapshot: 'gemini',
+            provider: 'gemini',
             calls: 1,
             success: 1,
             failure: 0,
@@ -519,10 +521,10 @@ describe('analytics failure source display', () => {
       [
         {
           auth_index: 'auth-1',
+          provider: 'codex',
           source: 'm:sk-a...zzzz',
           account_snapshot: 'snapshot@example.com',
           auth_label_snapshot: 'Snapshot Auth',
-          auth_provider_snapshot: 'codex',
           calls: 10,
           success: 8,
           failure: 2,
@@ -547,10 +549,10 @@ describe('analytics failure source display', () => {
       [
         {
           auth_index: 'legacy-auth',
+          provider: 'codex',
           source: 'm:sk-a...zzzz',
           account_snapshot: 'legacy@example.com',
           auth_label_snapshot: 'Legacy Auth',
-          auth_provider_snapshot: 'codex',
           calls: 4,
           success: 3,
           failure: 1,

@@ -454,7 +454,6 @@ export const buildChannelRowsFromAnalytics = (
           authIndex,
           accountSnapshot: row.account_snapshot,
           authLabelSnapshot: row.auth_label_snapshot,
-          authProviderSnapshot: row.auth_provider_snapshot,
         },
         { authMetaMap, authFileMap, sourceInfoMap, channelByAuthIndex }
       );
@@ -463,7 +462,7 @@ export const buildChannelRowsFromAnalytics = (
         id: authIndex,
         label,
         host: display.channelHost,
-        provider: display.provider,
+        provider: row.provider,
         planTypes: authMeta?.planType && authMeta.planType !== '-' ? [authMeta.planType] : [],
         disabled: channelMeta?.disabled || authMeta?.disabled || false,
         authCount: authIndex === '-' ? 0 : 1,
@@ -710,7 +709,7 @@ export const buildFilterOptionsFromAnalytics = (
     ),
     providers: uniqueReadableValues([
       ...channelRows.map((row) => resolveAuthMeta(row.auth_index)?.provider),
-      ...channelRows.map((row) => row.auth_provider_snapshot),
+      ...channelRows.map((row) => row.provider),
       ...(options.account_stats || []).map((row) => row.auth_provider_snapshot),
       ...(options.api_key_stats || []).map((row) => row.auth_provider_snapshot),
     ]),
@@ -721,7 +720,7 @@ export const buildFilterOptionsFromAnalytics = (
         return (
           channelByAuthIndex.get(authIndex)?.name ||
           resolveAuthMeta(row.auth_index)?.provider ||
-          row.auth_provider_snapshot
+          row.provider
         );
       })
     ),
@@ -831,6 +830,7 @@ export const buildUsageDetailsFromAnalyticsEvents = (
 ): UsageDetailWithEndpoint[] =>
   items.map((item) => ({
     timestamp: new Date(item.timestamp_ms).toISOString(),
+    provider: readString(item.provider),
     source: readString(item.source),
     auth_index: item.auth_index || null,
     api_key_hash: readString(item.api_key_hash),

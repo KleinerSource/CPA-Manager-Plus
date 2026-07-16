@@ -291,7 +291,7 @@ describe('resolveCodexInspectionAutoActionItems', () => {
     ]);
   });
 
-  it('keeps delete, disable, and enable suggestions in auto delete mode', () => {
+  it('downgrades delete suggestions to disable in auto delete mode', () => {
     const items = resolveCodexInspectionAutoActionItems('delete', [
       deleteItem,
       disableItem,
@@ -300,7 +300,7 @@ describe('resolveCodexInspectionAutoActionItems', () => {
     ]);
 
     expect(items.map((item) => [item.fileName, item.action])).toEqual([
-      ['delete.json', 'delete'],
+      ['delete.json', 'disable'],
       ['disable.json', 'disable'],
       ['enable.json', 'enable'],
     ]);
@@ -421,6 +421,23 @@ describe('Server Codex inspection action presentation', () => {
 });
 
 describe('executeCodexInspectionActions', () => {
+  it('does not delete credential files from inspection actions', async () => {
+    const deleteSpy = vi.spyOn(authFilesApi, 'deleteFileByName');
+    vi.spyOn(authFilesApi, 'list').mockResolvedValue({ files: [] });
+
+    const execution = await executeCodexInspectionActions({
+      settings: createRunResult().settings,
+      items: [createResultItem('delete', { fileName: 'delete-a.json' })],
+      previousFiles: [],
+    });
+
+    expect(deleteSpy).not.toHaveBeenCalled();
+    expect(execution.outcomes[0]).toMatchObject({
+      action: 'delete',
+      success: false,
+    });
+  });
+
   it('uses action concurrency for disable and enable operations', async () => {
     let activeStatusUpdates = 0;
     let maxStatusUpdates = 0;
