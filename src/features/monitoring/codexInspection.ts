@@ -599,7 +599,7 @@ export const buildExecutionFailureMessage = (outcome: CodexInspectionExecutionOu
 export const isSuggestedAction = (item: CodexInspectionResultItem) => item.action !== 'keep';
 
 export const isExecutableAction = (item: CodexInspectionResultItem) =>
-  item.action === 'delete' || item.action === 'disable' || item.action === 'enable';
+  item.action === 'disable' || item.action === 'enable';
 
 export const resolveCodexInspectionAutoActionItems = (
   mode: CodexInspectionAutoActionMode,
@@ -614,7 +614,9 @@ export const resolveCodexInspectionAutoActionItems = (
 
   if (normalizedMode === 'disable') {
     return items
-      .filter((item) => item.action === 'delete' || item.action === 'disable' || item.action === 'enable')
+      .filter(
+        (item) => item.action === 'delete' || item.action === 'disable' || item.action === 'enable'
+      )
       .map((item) =>
         item.action === 'delete'
           ? {
@@ -628,7 +630,21 @@ export const resolveCodexInspectionAutoActionItems = (
       );
   }
 
-  return items.filter((item) => item.action === 'delete' || item.action === 'disable' || item.action === 'enable');
+  return items
+    .filter(
+      (item) => item.action === 'delete' || item.action === 'disable' || item.action === 'enable'
+    )
+    .map((item) =>
+      item.action === 'delete'
+        ? {
+            ...item,
+            action: 'disable',
+            actionReason: item.actionReason
+              ? `${item.actionReason}；删除仅允许由维护脚本执行，巡检改为禁用账号`
+              : '删除仅允许由维护脚本执行，巡检改为禁用账号',
+          }
+        : item
+    );
 };
 
 export const isCodexInspectionStoppedError = (
@@ -684,8 +700,7 @@ export const applyCodexInspectionExecutionResult = (
   const disableCount = nextResults.filter((item) => item.action === 'disable').length;
   const enableCount = nextResults.filter((item) => item.action === 'enable').length;
   const reauthCount = nextResults.filter((item) => item.action === 'reauth').length;
-  const keepCount =
-    nextResults.length - deleteCount - disableCount - enableCount - reauthCount;
+  const keepCount = nextResults.length - deleteCount - disableCount - enableCount - reauthCount;
   const plannedActionPreview = nextResults
     .filter((item) => item.action !== 'keep')
     .slice(0, 10)

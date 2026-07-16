@@ -54,6 +54,7 @@ export interface UsageTokens {
 
 export interface UsageDetail {
   timestamp: string;
+  provider?: string;
   source: string;
   auth_index: string | number | null;
   api_key_hash?: string;
@@ -135,14 +136,8 @@ const CACHE_CREATION_TOKEN_KEYS = [
   'cache_write_input_tokens',
   'cacheWriteInputTokens',
 ] as const;
-const CACHE_CREATION_5M_TOKEN_KEYS = [
-  'cache_creation_tokens_5m',
-  'cacheCreationTokens5m',
-] as const;
-const CACHE_CREATION_1H_TOKEN_KEYS = [
-  'cache_creation_tokens_1h',
-  'cacheCreationTokens1h',
-] as const;
+const CACHE_CREATION_5M_TOKEN_KEYS = ['cache_creation_tokens_5m', 'cacheCreationTokens5m'] as const;
+const CACHE_CREATION_1H_TOKEN_KEYS = ['cache_creation_tokens_1h', 'cacheCreationTokens1h'] as const;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -305,7 +300,7 @@ export const compatibleCachedTokens = (
 const getApisRecord = (usageData: unknown): Record<string, unknown> | null => {
   const usageRecord = isRecord(usageData) ? usageData : null;
   const wrappedUsage = usageRecord && isRecord(usageRecord.usage) ? usageRecord.usage : null;
-  const apisRaw = usageRecord ? usageRecord.apis ?? wrappedUsage?.apis : null;
+  const apisRaw = usageRecord ? (usageRecord.apis ?? wrappedUsage?.apis) : null;
   return isRecord(apisRaw) ? apisRaw : null;
 };
 
@@ -717,8 +712,14 @@ export function extractTotalTokens(detail: unknown): number {
   const record = isRecord(detail) ? detail : null;
   const tokens = record && isRecord(record.tokens) ? record.tokens : {};
   const cacheReadTokens = Math.max(readFirstTokenNumber(tokens, CACHE_READ_TOKEN_KEYS), 0);
-  const cacheCreationTokens5m = Math.max(readFirstTokenNumber(tokens, CACHE_CREATION_5M_TOKEN_KEYS), 0);
-  const cacheCreationTokens1h = Math.max(readFirstTokenNumber(tokens, CACHE_CREATION_1H_TOKEN_KEYS), 0);
+  const cacheCreationTokens5m = Math.max(
+    readFirstTokenNumber(tokens, CACHE_CREATION_5M_TOKEN_KEYS),
+    0
+  );
+  const cacheCreationTokens1h = Math.max(
+    readFirstTokenNumber(tokens, CACHE_CREATION_1H_TOKEN_KEYS),
+    0
+  );
   const splitCacheCreationTokens = cacheCreationTokens5m + cacheCreationTokens1h;
   const cacheCreationTokens = Math.max(
     splitCacheCreationTokens > 0
@@ -797,9 +798,7 @@ export function calculateCost(
   if ((normalizedTier === 'priority' || normalizedTier === 'fast') && hasPriorityPrice) {
     promptPrice = Number(price.promptPriority) > 0 ? Number(price.promptPriority) : promptPrice;
     completionPrice =
-      Number(price.completionPriority) > 0
-        ? Number(price.completionPriority)
-        : completionPrice;
+      Number(price.completionPriority) > 0 ? Number(price.completionPriority) : completionPrice;
     cacheReadPrice =
       Number(price.cacheReadPriority) > 0 ? Number(price.cacheReadPriority) : cacheReadPrice;
     cacheCreationPrice =
@@ -861,9 +860,7 @@ export function normalizeModelPrices(value: unknown): Record<string, ModelPrice>
         : cache;
     const cacheCreationRaw = Number(price.cacheCreation);
     const cacheCreation =
-      hasOwn(price, 'cacheCreation') &&
-      Number.isFinite(cacheCreationRaw) &&
-      cacheCreationRaw >= 0
+      hasOwn(price, 'cacheCreation') && Number.isFinite(cacheCreationRaw) && cacheCreationRaw >= 0
         ? cacheCreationRaw
         : canonicalGPT56PricingModel(model)
           ? prompt * 1.25
@@ -1050,3 +1047,39 @@ export function formatDurationMs(
     )
     .join(' ');
 }
+
+export type CacheHitMetricsInput = {
+  modelName?: string;
+  inputTokens: unknown;
+  cachedTokens: unknown;
+  cacheReadTokens: unknown;
+  cacheCreationTokens: unknown;
+};
+
+export const getCacheHitTotals = ({
+  inputTokens,
+  cachedTokens,
+  cacheReadTokens,
+}: CacheHitMetricsInput): { hitTokens: number; inputTokens: number } => {
+  const input = Math.max(toFiniteNumber(inputTokens), 0);
+  const cached = Math.max(toFiniteNumber(cachedTokens), 0);
+  const cacheRead = Math.max(toFiniteNumber(cacheReadTokens), 0);
+  return {
+    hitTokens: cached + cacheRead,
+    inputTokens: input,
+  };
+};
+
+export const calculateCacheHitRate = (input: CacheHitMetricsInput): number => {
+  const totals = getCacheHitTotals(input);
+  return calculateCacheHitRateFromTotals(totals.hitTokens, totals.inputTokens);
+};
+
+export const calculateCacheHitRateFromTotals = (
+  hitTokens: unknown,
+  inputTokens: unknown
+): number => {
+  const normalizedInput = Math.max(toFiniteNumber(inputTokens), 0);
+  if (normalizedInput <= 0) return 0;
+  return Math.min(1, Math.max(toFiniteNumber(hitTokens), 0) / normalizedInput);
+};

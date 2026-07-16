@@ -58,39 +58,6 @@ const dedupeExecutionItems = (items: CodexInspectionResultItem[]) => {
   );
 };
 
-const executeDelete = async (
-  item: CodexInspectionResultItem
-): Promise<CodexInspectionExecutionOutcome> => {
-  try {
-    const result = await authFilesApi.deleteFileByName(item.fileName);
-    const failed = result.failed[0];
-    if (failed) {
-      return {
-        action: 'delete',
-        fileName: item.fileName,
-        displayAccount: item.displayAccount,
-        success: false,
-        error: failed.error || '删除失败',
-      };
-    }
-    return {
-      action: 'delete',
-      fileName: item.fileName,
-      displayAccount: item.displayAccount,
-      success: true,
-      error: '',
-    };
-  } catch (error) {
-    return {
-      action: 'delete',
-      fileName: item.fileName,
-      displayAccount: item.displayAccount,
-      success: false,
-      error: error instanceof Error ? error.message : String(error || '删除失败'),
-    };
-  }
-};
-
 const executeStatusChange = async (
   item: CodexInspectionResultItem,
   disabled: boolean
@@ -128,18 +95,16 @@ export const executeCodexInspectionActions = async ({
   const outcomes: CodexInspectionExecutionOutcome[] = [];
 
   if (deleteItems.length > 0) {
-    onLog?.('info', `开始删除 ${deleteItems.length} 个账号`);
-    const deleteOutcomes = await runConcurrently(
-      deleteItems,
-      settings.deleteWorkers,
-      executeDelete
+    const deleteOutcomes = deleteItems.map((item) => ({
+      action: 'delete' as const,
+      fileName: item.fileName,
+      displayAccount: item.displayAccount,
+      success: false,
+      error: '删除仅允许由维护脚本调用管理接口执行',
+    }));
+    deleteOutcomes.forEach((outcome) =>
+      onLog?.('warning', `${outcome.displayAccount}：${outcome.error}`)
     );
-    deleteOutcomes.forEach((outcome) => {
-      onLog?.(
-        outcome.success ? 'success' : 'error',
-        `${outcome.displayAccount} 删除${outcome.success ? '成功' : `失败：${outcome.error}`}`
-      );
-    });
     outcomes.push(...deleteOutcomes);
   }
 
