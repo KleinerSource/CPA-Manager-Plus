@@ -157,7 +157,18 @@ vi.mock('@/stores', () => ({
     selector({ connectionStatus: 'connected' }),
   useThemeStore: (selector: (state: { resolvedTheme: 'dark' }) => unknown) =>
     selector({ resolvedTheme: 'dark' }),
-  useQuotaStore: (selector: (state: { codexQuota: null }) => unknown) => selector({ codexQuota: null }),
+  useQuotaStore: (
+    selector: (state: {
+      codexQuota: null;
+      setCodexQuota: ReturnType<typeof vi.fn>;
+      activateQuotaCacheScope: ReturnType<typeof vi.fn>;
+    }) => unknown
+  ) =>
+    selector({
+      codexQuota: null,
+      setCodexQuota: vi.fn(),
+      activateQuotaCacheScope: vi.fn(),
+    }),
 }));
 
 vi.mock('@/features/authFiles/components/AuthFileCard', () => ({

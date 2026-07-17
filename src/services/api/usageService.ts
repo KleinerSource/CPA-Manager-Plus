@@ -2527,6 +2527,23 @@ export const dashboardApi = {
 };
 
 export const monitoringAnalyticsApi = {
+  getHeaderSnapshots: async (
+    base: string,
+    managementKey: string | undefined,
+    params: { days?: number; limit?: number } = {}
+  ): Promise<UsageHeaderSnapshotsResponse> => {
+    return withUsageServiceError(async () => {
+      const response = await axios.get<UsageHeaderSnapshotsResponse>(
+        buildUrl(base, '/v0/management/monitoring/header-snapshots'),
+        {
+          timeout: USAGE_SERVICE_TIMEOUT_MS,
+          headers: authHeaders(managementKey),
+          params,
+        }
+      );
+      return response.data;
+    });
+  },
   getAnalytics: async (
     base: string,
     managementKey: string | undefined,
