@@ -29,8 +29,8 @@ import {
   useAuthFileQuotaRefresh,
 } from '@/features/authFiles/components/AuthFileQuotaSection';
 import {
+  buildAuthFileTableQuotaItems,
   getAuthFilePlanLabel,
-  getCodexTableQuotaWindows,
   type AuthFileCodexStatusBadge,
   type AuthFileCodexStatusSummary,
 } from '@/features/authFiles/model/authFilesPageModel';
@@ -307,11 +307,6 @@ type QuotaProgressProps = {
   resetLabel: string | null;
 };
 
-function toRemainingQuotaPercent(usedPercent: number | null): number | null {
-  if (usedPercent === null) return null;
-  return Math.max(0, Math.min(100, 100 - usedPercent));
-}
-
 function QuotaProgress({ label, percent, resetLabel }: QuotaProgressProps) {
   if (percent === null && !resetLabel) return null;
 
@@ -370,18 +365,27 @@ function AuthFileTableQuotaCell({
     );
   }
 
+  const items = buildAuthFileTableQuotaItems(quotaType, quota, t, { codexStatus });
+
   return (
     <div className={styles.authFileTableQuotaStack}>
-      {quotaType === 'codex' ? (
-        getCodexTableQuotaWindows(quota as CodexQuotaState | undefined, codexStatus).map((window) => (
+      {items.map((item) =>
+        item.kind === 'meta' ? (
+          <div key={item.id} className={styles.authFileTableQuotaItem}>
+            <div className={styles.authFileTableQuotaHeader}>
+              <span>{item.label}</span>
+              <strong>{item.detail ?? '--'}</strong>
+            </div>
+          </div>
+        ) : (
           <QuotaProgress
-            key={window.id}
-            label={window.labelKey ? t(window.labelKey, window.labelParams) : window.label}
-            percent={toRemainingQuotaPercent(window.usedPercent)}
-            resetLabel={window.resetLabel}
+            key={item.id}
+            label={item.label}
+            percent={item.remainingPercent}
+            resetLabel={item.detail}
           />
-        ))
-      ) : null}
+        )
+      )}
     </div>
   );
 }
