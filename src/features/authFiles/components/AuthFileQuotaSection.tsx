@@ -17,7 +17,6 @@ import {
   buildCodexQuotaWindows,
   getStatusFromError,
   parseCodexUsagePayload,
-  resolveCodexPlanType,
 } from '@/utils/quota';
 import { authFilesApi } from '@/services/api/authFiles';
 import {
@@ -68,7 +67,7 @@ export const buildEmbeddedCodexQuota = (
   return {
     status: 'success',
     windows: buildCodexQuotaWindows(payload, t),
-    planType: payloadPlanType || resolveCodexPlanType(file),
+    planType: payloadPlanType,
     rateLimitResetCreditsAvailableCount: normalizeNumberValue(
       resetCredits?.available_count ?? resetCredits?.availableCount
     ),
