@@ -12,15 +12,43 @@ import {
   useProviderRecentRequests,
 } from '@/components/providers';
 import {
+  getOpenAIProviderRecentStatusData,
+  getOpenAIProviderTotalStats,
+  getProviderConfigKey,
+  getProviderRecentStatusData,
+  getProviderTotalStats,
+  hasDisableAllModelsRule,
   withDisableAllModelsRule,
   withoutDisableAllModelsRule,
 } from '@/components/providers/utils';
 import { usePageTransitionLayer } from '@/components/common/PageTransitionLayer';
+import { DropdownMenu } from '@/components/ui/DropdownMenu';
+import { Modal } from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
+import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
+import { IconPlus, IconSlidersHorizontal } from '@/components/ui/icons';
 import { useHeaderRefresh } from '@/hooks/useHeaderRefresh';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { ampcodeApi, providersApi } from '@/services/api';
 import { useAuthStore, useConfigStore, useNotificationStore, useThemeStore } from '@/stores';
+import { statusBarDataFromRecentRequests } from '@/utils/recentRequests';
+import { STORAGE_KEY_AI_PROVIDERS_LIST_MODE } from '@/utils/constants';
 import type { GeminiKeyConfig, OpenAIProviderConfig, ProviderKeyConfig } from '@/types';
+import {
+  AiProvidersUnifiedTable,
+  type AiProviderListRow,
+} from './AiProvidersUnifiedTable';
 import styles from './AiProvidersPage.module.scss';
+
+const maskProviderCredential = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (trimmed.length <= 8) return '••••••••';
+  return `${trimmed.slice(0, 4)}••••${trimmed.slice(-4)}`;
+};
+
+const getModelDetails = (models?: Array<{ name: string; alias?: string }>): string[] =>
+  models?.map((model) => (model.alias ? `${model.name} (${model.alias})` : model.name)) ?? [];
 
 export function AiProvidersPage() {
   const { t } = useTranslation();
@@ -38,6 +66,8 @@ export function AiProvidersPage() {
   const hasMounted = useRef(false);
   const [loading, setLoading] = useState(() => !isCacheValid());
   const [error, setError] = useState('');
+  const [listMode, setListMode] = useLocalStorage(STORAGE_KEY_AI_PROVIDERS_LIST_MODE, false);
+  const [addProviderModalOpen, setAddProviderModalOpen] = useState(false);
 
   const [geminiKeys, setGeminiKeys] = useState<GeminiKeyConfig[]>(
     () => config?.geminiApiKeys || []
@@ -159,6 +189,11 @@ export function AiProvidersPage() {
     },
     [navigate]
   );
+
+  const openProviderEditor = (provider: 'openai' | 'codex' | 'claude' | 'vertex' | 'gemini') => {
+    setAddProviderModalOpen(false);
+    openEditor('/ai-providers/' + provider + '/new');
+  };
 
   const deleteGemini = async (index: number) => {
     const entry = geminiKeys[index];
@@ -405,94 +440,340 @@ export function AiProvidersPage() {
     });
   };
 
+  const unifiedRows: AiProviderListRow[] = (() => {
+    const rows: AiProviderListRow[] = [];
+
+    geminiKeys.forEach((item, index) => {
+      const stats = getProviderTotalStats(usageByProvider, 'gemini', item.apiKey, item.baseUrl);
+      rows.push({
+        id: `gemini:${getProviderConfigKey(item, index)}`,
+        provider: t('ai_providers.provider_gemini'),
+        name: t('ai_providers.gemini_item_title'),
+        baseUrl: item.baseUrl || '',
+        credential: t('ai_providers.unified_credentials_count', { count: item.apiKey ? 1 : 0 }),
+        credentialDetails: item.apiKey ? [maskProviderCredential(item.apiKey)] : [],
+        modelCount: item.models?.length ?? 0,
+        modelDetails: getModelDetails(item.models),
+        success: stats.success,
+        failure: stats.failure,
+        statusData: getProviderRecentStatusData(
+          usageByProvider,
+          'gemini',
+          item.apiKey,
+          item.baseUrl
+        ),
+        disabled: hasDisableAllModelsRule(item.excludedModels),
+        canToggle: true,
+        canDelete: true,
+        onEdit: () => openEditor(`/ai-providers/gemini/${index}`),
+        onDelete: () => void deleteGemini(index),
+        onToggle: (enabled) => void setConfigEnabled('gemini', index, enabled),
+      });
+    });
+
+    codexConfigs.forEach((item, index) => {
+      const stats = getProviderTotalStats(usageByProvider, 'codex', item.apiKey, item.baseUrl);
+      rows.push({
+        id: `codex:${getProviderConfigKey(item, index)}`,
+        provider: t('ai_providers.provider_codex'),
+        name: item.name || t('ai_providers.codex_item_title'),
+        baseUrl: item.baseUrl || '',
+        credential: t('ai_providers.unified_credentials_count', { count: item.apiKey ? 1 : 0 }),
+        credentialDetails: item.apiKey ? [maskProviderCredential(item.apiKey)] : [],
+        modelCount: item.models?.length ?? 0,
+        modelDetails: getModelDetails(item.models),
+        success: stats.success,
+        failure: stats.failure,
+        statusData: getProviderRecentStatusData(
+          usageByProvider,
+          'codex',
+          item.apiKey,
+          item.baseUrl
+        ),
+        disabled: hasDisableAllModelsRule(item.excludedModels),
+        canToggle: true,
+        canDelete: true,
+        onEdit: () => openEditor(`/ai-providers/codex/${index}`),
+        onDelete: () => void deleteProviderEntry('codex', index),
+        onToggle: (enabled) => void setConfigEnabled('codex', index, enabled),
+      });
+    });
+
+    claudeConfigs.forEach((item, index) => {
+      const stats = getProviderTotalStats(usageByProvider, 'claude', item.apiKey, item.baseUrl);
+      rows.push({
+        id: `claude:${getProviderConfigKey(item, index)}`,
+        provider: t('ai_providers.provider_claude'),
+        name: item.name || t('ai_providers.claude_item_title'),
+        baseUrl: item.baseUrl || '',
+        credential: t('ai_providers.unified_credentials_count', { count: item.apiKey ? 1 : 0 }),
+        credentialDetails: item.apiKey ? [maskProviderCredential(item.apiKey)] : [],
+        modelCount: item.models?.length ?? 0,
+        modelDetails: getModelDetails(item.models),
+        success: stats.success,
+        failure: stats.failure,
+        statusData: getProviderRecentStatusData(
+          usageByProvider,
+          'claude',
+          item.apiKey,
+          item.baseUrl
+        ),
+        disabled: hasDisableAllModelsRule(item.excludedModels),
+        canToggle: true,
+        canDelete: true,
+        onEdit: () => openEditor(`/ai-providers/claude/${index}`),
+        onDelete: () => void deleteProviderEntry('claude', index),
+        onToggle: (enabled) => void setConfigEnabled('claude', index, enabled),
+      });
+    });
+
+    vertexConfigs.forEach((item, index) => {
+      const stats = getProviderTotalStats(usageByProvider, 'vertex', item.apiKey, item.baseUrl);
+      rows.push({
+        id: `vertex:${getProviderConfigKey(item, index)}`,
+        provider: t('ai_providers.provider_vertex'),
+        name: item.name || t('ai_providers.vertex_item_title'),
+        baseUrl: item.baseUrl || '',
+        credential: t('ai_providers.unified_credentials_count', { count: item.apiKey ? 1 : 0 }),
+        credentialDetails: item.apiKey ? [maskProviderCredential(item.apiKey)] : [],
+        modelCount: item.models?.length ?? 0,
+        modelDetails: getModelDetails(item.models),
+        success: stats.success,
+        failure: stats.failure,
+        statusData: getProviderRecentStatusData(
+          usageByProvider,
+          'vertex',
+          item.apiKey,
+          item.baseUrl
+        ),
+        disabled: hasDisableAllModelsRule(item.excludedModels),
+        canToggle: true,
+        canDelete: true,
+        onEdit: () => openEditor(`/ai-providers/vertex/${index}`),
+        onDelete: () => void deleteVertex(index),
+        onToggle: (enabled) => void setConfigEnabled('vertex', index, enabled),
+      });
+    });
+
+    openaiProviders.forEach((item, index) => {
+      const stats = getOpenAIProviderTotalStats(item, usageByProvider);
+      rows.push({
+        id: `openai:${item.name}:${index}`,
+        provider: t('ai_providers.provider_openai'),
+        name: item.name,
+        baseUrl: item.baseUrl,
+        credential: t('ai_providers.unified_credentials_count', {
+          count: item.apiKeyEntries?.length ?? 0,
+        }),
+        credentialDetails: item.apiKeyEntries?.map((entry) => maskProviderCredential(entry.apiKey)),
+        modelCount: item.models?.length ?? 0,
+        modelDetails: getModelDetails(item.models),
+        success: stats.success,
+        failure: stats.failure,
+        statusData: getOpenAIProviderRecentStatusData(item, usageByProvider),
+        disabled: item.disabled === true,
+        canToggle: true,
+        canDelete: true,
+        onEdit: () => openEditor(`/ai-providers/openai/${index}`),
+        onDelete: () => void deleteOpenai(index),
+        onToggle: (enabled) => void setOpenAIProviderEnabled(index, enabled),
+      });
+    });
+
+    if (config?.ampcode) {
+      const ampcodeCredentialDetails = [
+        ...(config.ampcode.upstreamApiKey
+          ? [maskProviderCredential(config.ampcode.upstreamApiKey)]
+          : []),
+        ...(config.ampcode.upstreamApiKeys ?? []).map((entry) =>
+          maskProviderCredential(entry.upstreamApiKey)
+        ),
+      ];
+      rows.push({
+        id: 'ampcode',
+        provider: t('ai_providers.provider_ampcode'),
+        name: t('ai_providers.ampcode_title'),
+        baseUrl: config.ampcode.upstreamUrl || '',
+        credential: t('ai_providers.unified_credentials_count', {
+          count: ampcodeCredentialDetails.length,
+        }),
+        credentialDetails: ampcodeCredentialDetails,
+        modelCount: config.ampcode.modelMappings?.length ?? 0,
+        modelDetails: config.ampcode.modelMappings?.map(
+          (mapping) => `${mapping.from} → ${mapping.to}`
+        ),
+        success: 0,
+        failure: 0,
+        statusData: statusBarDataFromRecentRequests([]),
+        disabled: false,
+        canToggle: false,
+        canDelete: false,
+        onEdit: () => openEditor('/ai-providers/ampcode'),
+        onDelete: () => undefined,
+      });
+    }
+
+    return rows;
+  })();
+
   return (
     <div className={styles.container}>
       <div className={styles.content}>
         {error && <div className="error-box">{error}</div>}
 
-        <div id="provider-openai">
-          <OpenAISection
-            configs={openaiProviders}
-            usageByProvider={usageByProvider}
-            loading={loading}
-            disableControls={disableControls}
-            isSwitching={isSwitching}
-            resolvedTheme={resolvedTheme}
-            onAdd={() => openEditor('/ai-providers/openai/new')}
-            onEdit={(index) => openEditor(`/ai-providers/openai/${index}`)}
-            onDelete={deleteOpenai}
-            onToggle={(index, enabled) => void setOpenAIProviderEnabled(index, enabled)}
+        <div className={styles.displayOptionsItem}>
+          <Button
+            size="sm"
+            onClick={() => setAddProviderModalOpen(true)}
+            disabled={disableControls || loading}
+          >
+            <IconPlus size={15} />
+            {t('ai_providers.add_provider')}
+          </Button>
+          <DropdownMenu
+            ariaLabel={t('ai_providers.display_options_label')}
+            triggerLabel={t('ai_providers.display_options_label')}
+            triggerIcon={<IconSlidersHorizontal size={15} />}
+            triggerClassName={styles.displayOptionsTrigger}
+            items={[
+              {
+                key: 'display-options',
+                label: t('ai_providers.display_options_label'),
+                content: (
+                  <div className={styles.displayOptionsMenu}>
+                    <ToggleSwitch
+                      checked={listMode}
+                      onChange={setListMode}
+                      ariaLabel={t('ai_providers.list_mode_label')}
+                      label={t('ai_providers.list_mode_label')}
+                    />
+                  </div>
+                ),
+              },
+            ]}
           />
         </div>
 
-        <div id="provider-codex">
-          <CodexSection
-            configs={codexConfigs}
-            usageByProvider={usageByProvider}
+        {listMode ? (
+          <AiProvidersUnifiedTable
+            rows={unifiedRows}
             loading={loading}
-            disableControls={disableControls}
-            isSwitching={isSwitching}
-            onAdd={() => openEditor('/ai-providers/codex/new')}
-            onEdit={(index) => openEditor(`/ai-providers/codex/${index}`)}
-            onDelete={(index) => void deleteProviderEntry('codex', index)}
-            onToggle={(index, enabled) => void setConfigEnabled('codex', index, enabled)}
+            actionsDisabled={disableControls || loading || isSwitching}
           />
-        </div>
+        ) : (
+          <>
+            <div id="provider-openai">
+              <OpenAISection
+                configs={openaiProviders}
+                usageByProvider={usageByProvider}
+                loading={loading}
+                disableControls={disableControls}
+                isSwitching={isSwitching}
+                resolvedTheme={resolvedTheme}
+                onAdd={() => openEditor('/ai-providers/openai/new')}
+                onEdit={(index) => openEditor(`/ai-providers/openai/${index}`)}
+                onDelete={deleteOpenai}
+                onToggle={(index, enabled) => void setOpenAIProviderEnabled(index, enabled)}
+              />
+            </div>
 
-        <div id="provider-claude">
-          <ClaudeSection
-            configs={claudeConfigs}
-            usageByProvider={usageByProvider}
-            loading={loading}
-            disableControls={disableControls}
-            isSwitching={isSwitching}
-            onAdd={() => openEditor('/ai-providers/claude/new')}
-            onEdit={(index) => openEditor(`/ai-providers/claude/${index}`)}
-            onDelete={(index) => void deleteProviderEntry('claude', index)}
-            onToggle={(index, enabled) => void setConfigEnabled('claude', index, enabled)}
-          />
-        </div>
+            <div id="provider-codex">
+              <CodexSection
+                configs={codexConfigs}
+                usageByProvider={usageByProvider}
+                loading={loading}
+                disableControls={disableControls}
+                isSwitching={isSwitching}
+                onAdd={() => openEditor('/ai-providers/codex/new')}
+                onEdit={(index) => openEditor(`/ai-providers/codex/${index}`)}
+                onDelete={(index) => void deleteProviderEntry('codex', index)}
+                onToggle={(index, enabled) => void setConfigEnabled('codex', index, enabled)}
+              />
+            </div>
 
-        <div id="provider-vertex">
-          <VertexSection
-            configs={vertexConfigs}
-            usageByProvider={usageByProvider}
-            loading={loading}
-            disableControls={disableControls}
-            isSwitching={isSwitching}
-            onAdd={() => openEditor('/ai-providers/vertex/new')}
-            onEdit={(index) => openEditor(`/ai-providers/vertex/${index}`)}
-            onDelete={deleteVertex}
-            onToggle={(index, enabled) => void setConfigEnabled('vertex', index, enabled)}
-          />
-        </div>
+            <div id="provider-claude">
+              <ClaudeSection
+                configs={claudeConfigs}
+                usageByProvider={usageByProvider}
+                loading={loading}
+                disableControls={disableControls}
+                isSwitching={isSwitching}
+                onAdd={() => openEditor('/ai-providers/claude/new')}
+                onEdit={(index) => openEditor(`/ai-providers/claude/${index}`)}
+                onDelete={(index) => void deleteProviderEntry('claude', index)}
+                onToggle={(index, enabled) => void setConfigEnabled('claude', index, enabled)}
+              />
+            </div>
 
-        <div id="provider-ampcode">
-          <AmpcodeSection
-            config={config?.ampcode}
-            loading={loading}
-            disableControls={disableControls}
-            isSwitching={isSwitching}
-            onEdit={() => openEditor('/ai-providers/ampcode')}
-          />
-        </div>
+            <div id="provider-vertex">
+              <VertexSection
+                configs={vertexConfigs}
+                usageByProvider={usageByProvider}
+                loading={loading}
+                disableControls={disableControls}
+                isSwitching={isSwitching}
+                onAdd={() => openEditor('/ai-providers/vertex/new')}
+                onEdit={(index) => openEditor(`/ai-providers/vertex/${index}`)}
+                onDelete={deleteVertex}
+                onToggle={(index, enabled) => void setConfigEnabled('vertex', index, enabled)}
+              />
+            </div>
 
-        <div id="provider-gemini">
-          <GeminiSection
-            configs={geminiKeys}
-            usageByProvider={usageByProvider}
-            loading={loading}
-            disableControls={disableControls}
-            isSwitching={isSwitching}
-            onAdd={() => openEditor('/ai-providers/gemini/new')}
-            onEdit={(index) => openEditor(`/ai-providers/gemini/${index}`)}
-            onDelete={deleteGemini}
-            onToggle={(index, enabled) => void setConfigEnabled('gemini', index, enabled)}
-          />
-        </div>
+            <div id="provider-ampcode">
+              <AmpcodeSection
+                config={config?.ampcode}
+                loading={loading}
+                disableControls={disableControls}
+                isSwitching={isSwitching}
+                onEdit={() => openEditor('/ai-providers/ampcode')}
+              />
+            </div>
+
+            <div id="provider-gemini">
+              <GeminiSection
+                configs={geminiKeys}
+                usageByProvider={usageByProvider}
+                loading={loading}
+                disableControls={disableControls}
+                isSwitching={isSwitching}
+                onAdd={() => openEditor('/ai-providers/gemini/new')}
+                onEdit={(index) => openEditor(`/ai-providers/gemini/${index}`)}
+                onDelete={deleteGemini}
+                onToggle={(index, enabled) => void setConfigEnabled('gemini', index, enabled)}
+              />
+            </div>
+          </>
+        )}
       </div>
 
-      <ProviderNav />
+      <Modal
+        open={addProviderModalOpen}
+        title={t('ai_providers.add_provider_title')}
+        onClose={() => setAddProviderModalOpen(false)}
+        width={520}
+      >
+        <div className={styles.providerTypeList}>
+          {([
+            ['openai', 'provider_openai'],
+            ['codex', 'provider_codex'],
+            ['claude', 'provider_claude'],
+            ['vertex', 'provider_vertex'],
+            ['gemini', 'provider_gemini'],
+          ] as const).map(([provider, labelKey]) => (
+            <Button
+              key={provider}
+              variant="secondary"
+              className={styles.providerTypeButton}
+              onClick={() => openProviderEditor(provider)}
+              disabled={disableControls || loading}
+            >
+              {t('ai_providers.' + labelKey)}
+            </Button>
+          ))}
+        </div>
+      </Modal>
+
+      {!listMode && <ProviderNav />}
     </div>
   );
 }

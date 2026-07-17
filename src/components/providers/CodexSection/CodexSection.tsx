@@ -1,7 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SelectionCheckbox } from '@/components/ui/SelectionCheckbox';
 import { Select } from '@/components/ui/Select';
@@ -21,6 +20,7 @@ import { ProviderStatusBar } from '../ProviderStatusBar';
 import { ModelTagList } from '../ModelTagList';
 import { ProviderCardTitle } from '../ProviderCardTitle';
 import { ProviderApiKeyEntries } from '../ProviderApiKeyEntries';
+import { FloatingProviderSection } from '../FloatingProviderSection';
 import {
   getProviderConfigKey,
   getProviderRecentBuckets,
@@ -328,7 +328,7 @@ export function CodexSection({
 
   return (
     <>
-      <Card
+      <FloatingProviderSection
         title={
           <span className={styles.cardTitle}>
             <img src={iconCodex} alt="" className={styles.cardTitleIcon} />
@@ -476,7 +476,7 @@ export function CodexSection({
             }}
           />
         )}
-      </Card>
+      </FloatingProviderSection>
     </>
   );
 }

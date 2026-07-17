@@ -75,33 +75,6 @@
     .time { font-size: 16px; font-weight: 600; line-height: 1; white-space: nowrap; }
     .date { font-size: 12px; color: var(--text-tertiary); }
   }
-
-  .headerActions {
-    display: flex;
-    gap: 8px;
-
-    .actionBtn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      min-height: 36px;
-      padding: 8px 14px;
-      background: var(--app-surface-muted);
-      border: 1px solid var(--app-border);
-      border-radius: var(--app-radius-md);
-      color: var(--text-primary);
-      font-size: 13px;
-      font-weight: 500;
-      transition: all 0.2s;
-      cursor: pointer;
-
-      &:hover {
-        background: var(--app-accent-soft);
-        border-color: var(--color-primary);
-      }
-    }
-  }
 }
 
 .overviewRow {

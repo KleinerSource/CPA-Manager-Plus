@@ -183,6 +183,8 @@ vi.mock('@/features/monitoring/codexInspection', () => ({
 }));
 
 vi.mock('@/features/authFiles/uiState', () => ({
+  normalizeAuthFilesLayoutMode: (value: string) =>
+    value === 'card' || value === 'table' ? value : null,
   normalizeAuthFilesSortMode: (value: string) => (value === 'default' ? 'default' : null),
   normalizeAuthFilesViewMode: (value: string) =>
     value === 'diagram' || value === 'list' ? value : null,

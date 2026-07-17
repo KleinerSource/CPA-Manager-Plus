@@ -13,6 +13,7 @@ interface PageTransitionProps {
   render: (location: Location) => ReactNode;
   getRouteOrder?: (pathname: string) => number | null;
   getTransitionVariant?: (fromPathname: string, toPathname: string) => TransitionVariant;
+  preserveScrollPosition?: (fromPathname: string, toPathname: string) => boolean;
   scrollContainerRef?: React.RefObject<HTMLElement | null>;
 }
 
@@ -56,6 +57,7 @@ export function PageTransition({
   render,
   getRouteOrder,
   getTransitionVariant,
+  preserveScrollPosition,
   scrollContainerRef,
 }: PageTransitionProps) {
   const location = useLocation();
@@ -97,7 +99,13 @@ export function PageTransition({
     exitScrollOffsetRef.current = exitScrollOffset;
     scrollPositionsRef.current.set(currentLayerKey, exitScrollOffset);
 
-    enterScrollOffsetRef.current = scrollPositionsRef.current.get(locationLayerKey) ?? 0;
+    const shouldPreserveScroll = preserveScrollPosition?.(
+      currentLayerPathname ?? '',
+      location.pathname
+    ) ?? false;
+    enterScrollOffsetRef.current = shouldPreserveScroll
+      ? exitScrollOffset
+      : (scrollPositionsRef.current.get(locationLayerKey) ?? 0);
     const enterScrollOffset = enterScrollOffsetRef.current;
     const resolveOrderIndex = (pathname?: string) => {
       if (!getRouteOrder || !pathname) return null;
@@ -226,6 +234,7 @@ export function PageTransition({
     currentLayerPathname,
     getRouteOrder,
     getTransitionVariant,
+    preserveScrollPosition,
     resolveScrollContainer,
     layers,
   ]);

@@ -1,7 +1,6 @@
 import { Fragment, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import iconClaude from '@/assets/icons/claude.svg';
 import type { ProviderKeyConfig } from '@/types';
@@ -12,6 +11,7 @@ import { ProviderStatusBar } from '../ProviderStatusBar';
 import { ModelTagList } from '../ModelTagList';
 import { ProviderCardTitle } from '../ProviderCardTitle';
 import { ProviderApiKeyEntries } from '../ProviderApiKeyEntries';
+import { FloatingProviderSection } from '../FloatingProviderSection';
 import {
   getProviderConfigKey,
   getProviderRecentBuckets,
@@ -66,7 +66,7 @@ export function ClaudeSection({
 
   return (
     <>
-      <Card
+      <FloatingProviderSection
         title={
           <span className={styles.cardTitle}>
             <img src={iconClaude} alt="" className={styles.cardTitleIcon} />
@@ -214,7 +214,7 @@ export function ClaudeSection({
             );
           }}
         />
-      </Card>
+      </FloatingProviderSection>
     </>
   );
 }

@@ -123,8 +123,25 @@ export function OpenAISection({
       const fixedTop = Number.parseFloat(rootStyles.getPropertyValue('--header-height')) || 64;
       const toolbarHeight = anchorRect.height;
       const isMobile = window.innerWidth <= 768;
-      const shouldShow =
-        !isMobile && anchorRect.top <= fixedTop && sectionRect.bottom > fixedTop + toolbarHeight;
+      const activeSections = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-provider-floating-section]')
+      )
+        .map((candidate) => {
+          const rect = candidate.getBoundingClientRect();
+          const header = candidate.querySelector<HTMLElement>('.card-header');
+          return {
+            element: candidate,
+            rect,
+            headerHeight: header?.getBoundingClientRect().height ?? toolbarHeight,
+          };
+        })
+        .filter(
+          ({ rect, headerHeight }) =>
+            rect.top <= fixedTop && rect.bottom > fixedTop + headerHeight
+        )
+        .sort((left, right) => left.rect.top - right.rect.top);
+      const activeSection = activeSections[activeSections.length - 1];
+      const shouldShow = !isMobile && activeSection?.element === section;
 
       setFloatingToolbarStyle((prev) => {
         const next = {
@@ -594,7 +611,7 @@ export function OpenAISection({
 
   return (
     <>
-      <div ref={sectionRef}>
+      <div ref={sectionRef} data-provider-floating-section>
         <Card
           title={renderStaticTitle()}
           extra={

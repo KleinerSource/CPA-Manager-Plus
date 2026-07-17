@@ -346,6 +346,7 @@ export function AiProvidersAmpcodeEditPage() {
     <SecondaryScreenShell
       ref={swipeRef}
       contentClassName={layoutStyles.content}
+      hideTopBar
       title={title}
       onBack={handleBack}
       backLabel={t('common.back')}

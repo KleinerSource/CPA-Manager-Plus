@@ -275,6 +275,7 @@ export function AiProvidersClaudeEditPage() {
     <SecondaryScreenShell
       ref={swipeRef}
       contentClassName={layoutStyles.content}
+      hideTopBar
       title={title}
       onBack={handleBack}
       backLabel={t('common.back')}
@@ -322,6 +323,7 @@ export function AiProvidersClaudeEditPage() {
               onChange={(e) => setForm((prev) => ({ ...prev, apiKey: e.target.value }))}
               disabled={saving || disableControls || isTesting}
             />
+            <div className={styles.providerInlineFields}>
             <Input
               label={t('ai_providers.priority_label')}
               hint={t('ai_providers.priority_hint')}
@@ -346,6 +348,7 @@ export function AiProvidersClaudeEditPage() {
               hint={t('ai_providers.prefix_hint')}
               disabled={saving || disableControls || isTesting}
             />
+            </div>
             <Input
               label={t('ai_providers.claude_add_modal_url_label')}
               value={form.baseUrl ?? ''}

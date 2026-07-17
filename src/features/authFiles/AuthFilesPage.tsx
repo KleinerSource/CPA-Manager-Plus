@@ -42,6 +42,7 @@ import {
   type ResolvedTheme,
 } from '@/features/authFiles/constants';
 import { AuthFileCard } from '@/features/authFiles/components/AuthFileCard';
+import { AuthFileTable } from '@/features/authFiles/components/AuthFileTable';
 import { buildEmbeddedCodexQuota } from '@/features/authFiles/components/AuthFileQuotaSection';
 import { AuthJsonPasteModal } from '@/features/authFiles/components/AuthJsonPasteModal';
 import { AuthFileModelsModal } from '@/features/authFiles/components/AuthFileModelsModal';
@@ -88,11 +89,13 @@ import {
 } from '@/features/monitoring/codexInspection';
 import {
   normalizeAuthFilesSortMode,
+  normalizeAuthFilesLayoutMode,
   normalizeAuthFilesViewMode,
   readAuthFilesUiState,
   readPersistedAuthFilesCompactMode,
   writeAuthFilesUiState,
   writePersistedAuthFilesCompactMode,
+  type AuthFilesLayoutMode,
   type AuthFilesSortMode,
 } from '@/features/authFiles/uiState';
 import type { AuthJsonInputType } from '@/features/authFiles/sessionAuthConverter';
@@ -136,6 +139,7 @@ export function AuthFilesPage() {
   });
   const [pageSizeInput, setPageSizeInput] = useState('9');
   const [viewMode, setViewMode] = useState<'diagram' | 'list'>('list');
+  const [layoutMode, setLayoutMode] = useState<AuthFilesLayoutMode>('card');
   const [sortMode, setSortMode] = useState<AuthFilesSortMode>('default');
   const [batchActionBarVisible, setBatchActionBarVisible] = useState(false);
   const [uiStateHydrated, setUiStateHydrated] = useState(false);
@@ -303,6 +307,10 @@ export function AuthFilesPage() {
       if (persistedViewMode) {
         setViewMode(persistedViewMode);
       }
+      const persistedLayoutMode = normalizeAuthFilesLayoutMode(persisted.layoutMode);
+      if (persistedLayoutMode) {
+        setLayoutMode(persistedLayoutMode);
+      }
     }
 
     setUiStateHydrated(true);
@@ -327,6 +335,7 @@ export function AuthFilesPage() {
       compactPageSize: pageSizeByMode.compact,
       sortMode,
       viewMode,
+      layoutMode,
     });
     writePersistedAuthFilesCompactMode(compactMode);
   }, [
@@ -345,6 +354,7 @@ export function AuthFilesPage() {
     sortMode,
     uiStateHydrated,
     viewMode,
+    layoutMode,
   ]);
 
   useEffect(() => {
@@ -1221,6 +1231,12 @@ export function AuthFilesPage() {
                               ariaLabel={t('auth_files.hide_errors_label')}
                               label={t('auth_files.hide_errors_label')}
                             />
+                            <ToggleSwitch
+                              checked={layoutMode === 'table'}
+                              onChange={(value) => setLayoutMode(value ? 'table' : 'card')}
+                              ariaLabel={t('auth_files.layout_mode_list_toggle')}
+                              label={t('auth_files.layout_mode_list_toggle')}
+                            />
                           </div>
                         ),
                       },
@@ -1269,11 +1285,35 @@ export function AuthFilesPage() {
                 title={t('auth_files.search_empty_title')}
                 description={t('auth_files.search_empty_desc')}
               />
-            ) : (
-              <div
-                className={`${styles.fileGrid} ${pageHasInlineQuotaCards ? styles.fileGridQuotaManaged : ''} ${compactMode ? styles.fileGridCompact : ''}`}
-              >
-                {superCategoryPageItems.length > 0 && (
+            ) : layoutMode === 'table' ? (
+                <AuthFileTable
+                  files={pageItems}
+                  selectedFiles={selectedFiles}
+                  resolvedTheme={resolvedTheme}
+                  statusBarCache={statusBarCache}
+                  getCodexStatus={(file) =>
+                    codexStatusByAuthFileKey.get(getAuthFileCodexInspectionKeyForFile(file)) ??
+                    getAuthFileCodexStatus(file, codexQuota[file.name])
+                  }
+                  getCodexQuota={(file) => codexQuota[file.name]}
+                  disableControls={disableControls}
+                  deleting={deleting}
+                  statusUpdating={statusUpdating}
+                  getCodexStatusBadges={(file) =>
+                    codexStatusByAuthFileKey.get(getAuthFileCodexInspectionKeyForFile(file))?.badges ?? []
+                  }
+                  onShowModels={showModels}
+                  onDownload={handleDownload}
+                  onOpenPrefixProxyEditor={openPrefixProxyEditor}
+                  onDelete={handleDelete}
+                  onToggleStatus={handleStatusToggle}
+                  onToggleSelect={toggleSelect}
+                />
+              ) : (
+                <div
+                  className={`${styles.fileGrid} ${pageHasInlineQuotaCards ? styles.fileGridQuotaManaged : ''} ${compactMode ? styles.fileGridCompact : ''}`}
+                >
+                  {superCategoryPageItems.length > 0 && (
                   <SuperCategoryGroupCard
                     files={superCategoryPageItems}
                     compact={compactMode}
@@ -1297,8 +1337,8 @@ export function AuthFilesPage() {
                     onToggleStatus={handleStatusToggle}
                     onToggleSelect={toggleSelect}
                   />
-                )}
-                {regularPageItems.map((file) => {
+                  )}
+                  {regularPageItems.map((file) => {
                   const authFileKey = getAuthFileCodexInspectionKeyForFile(file);
                   return (
                     <AuthFileCard
@@ -1324,9 +1364,9 @@ export function AuthFilesPage() {
                       onToggleSelect={toggleSelect}
                     />
                   );
-                })}
-              </div>
-            )}
+                  })}
+                </div>
+              )}
 
             {!loading && sorted.length > pageSize && (
               <div className={styles.pagination}>

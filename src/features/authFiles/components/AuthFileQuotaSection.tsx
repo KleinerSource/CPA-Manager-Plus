@@ -27,7 +27,7 @@ import {
 import { QuotaProgressBar } from '@/features/authFiles/components/QuotaProgressBar';
 import styles from '@/features/authFiles/AuthFilesPage.module.scss';
 
-type QuotaState = { status?: string; error?: string; errorStatus?: number } | undefined;
+export type QuotaState = { status?: string; error?: string; errorStatus?: number } | undefined;
 const noopQuotaStateUpdater = (() => undefined) as unknown as (updater: unknown) => void;
 const getQuotaConfig = (type: QuotaProviderType) => {
   if (type === 'antigravity') return ANTIGRAVITY_CONFIG;
@@ -37,6 +37,17 @@ const getQuotaConfig = (type: QuotaProviderType) => {
   if (type === 'kimi') return KIMI_CONFIG;
   if (type === 'xai') return XAI_CONFIG;
   return GEMINI_CLI_CONFIG;
+};
+
+export const getQuotaI18nPrefix = (type: QuotaProviderType): string =>
+  getQuotaConfig(type).i18nPrefix;
+
+export const getAuthFileQuotaErrorMessage = (t: TFunction, quota: QuotaState): string => {
+  const quotaErrorStatus =
+    quota && typeof quota === 'object' && 'errorStatus' in quota ? quota.errorStatus : undefined;
+  const quotaError = quota && typeof quota === 'object' && 'error' in quota ? quota.error : undefined;
+
+  return resolveQuotaErrorMessage(t, quotaErrorStatus, quotaError || t('common.unknown_error'));
 };
 
 export const buildEmbeddedCodexQuota = (
@@ -300,15 +311,7 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
     i18nPrefix: string;
     renderQuotaItems: (quota: unknown, t: TFunction, helpers: unknown) => unknown;
   };
-  const quotaErrorStatus =
-    quota && typeof quota === 'object' && 'errorStatus' in quota ? quota.errorStatus : undefined;
-  const quotaError =
-    quota && typeof quota === 'object' && 'error' in quota ? quota.error : undefined;
-  const quotaErrorMessage = resolveQuotaErrorMessage(
-    t,
-    quotaErrorStatus,
-    quotaError || t('common.unknown_error')
-  );
+  const quotaErrorMessage = getAuthFileQuotaErrorMessage(t, quota);
   const renderQuotaRefreshAction = () => {
     if (!canRefreshQuota) return null;
 

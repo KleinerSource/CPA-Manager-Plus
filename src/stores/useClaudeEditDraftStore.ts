@@ -101,12 +101,21 @@ const buildEmptyDraft = (): ClaudeEditDraft => ({
   testMessage: '',
 });
 
+// The editor and `/models` route can be replaced in the same navigation turn. Keep the draft
+// until the next task so the new route layer can acquire it before it is discarded.
+const pendingReleaseTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
 export const useClaudeEditDraftStore = create<ClaudeEditDraftState>((set, get) => ({
   drafts: {},
   refCounts: {},
 
   acquireDraft: (key) => {
     if (!key) return;
+    const pendingReleaseTimer = pendingReleaseTimers.get(key);
+    if (pendingReleaseTimer !== undefined) {
+      clearTimeout(pendingReleaseTimer);
+      pendingReleaseTimers.delete(key);
+    }
     set((state) => {
       const existingDraft = state.drafts[key];
       const currentCount = state.refCounts[key] ?? 0;
@@ -127,9 +136,17 @@ export const useClaudeEditDraftStore = create<ClaudeEditDraftState>((set, get) =
       }
       const nextCounts = { ...state.refCounts };
       delete nextCounts[key];
-      const nextDrafts = { ...state.drafts };
-      delete nextDrafts[key];
-      return { refCounts: nextCounts, drafts: nextDrafts };
+      const timer = setTimeout(() => {
+        pendingReleaseTimers.delete(key);
+        set((state) => {
+          if (state.refCounts[key]) return state;
+          const nextDrafts = { ...state.drafts };
+          delete nextDrafts[key];
+          return { drafts: nextDrafts };
+        });
+      }, 0);
+      pendingReleaseTimers.set(key, timer);
+      return { refCounts: nextCounts };
     });
   },
 
@@ -225,6 +242,11 @@ export const useClaudeEditDraftStore = create<ClaudeEditDraftState>((set, get) =
 
   clearDraft: (key) => {
     if (!key) return;
+    const pendingReleaseTimer = pendingReleaseTimers.get(key);
+    if (pendingReleaseTimer !== undefined) {
+      clearTimeout(pendingReleaseTimer);
+      pendingReleaseTimers.delete(key);
+    }
     set((state) => {
       if (!state.drafts[key] && !state.refCounts[key]) return state;
       const nextDrafts = { ...state.drafts };
