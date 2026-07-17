@@ -39,6 +39,30 @@ describe('buildEmbeddedCodexQuota', () => {
   it('没有 SQLite 快照时不伪造额度状态', () => {
     expect(buildEmbeddedCodexQuota({ name: 'codex-user.json', type: 'codex' }, t)).toBeUndefined();
   });
+
+  it('将 429 响应头保存的已用 100% 额度保留为剩余 0% 的有效窗口', () => {
+    const quota = buildEmbeddedCodexQuota(
+      {
+        name: 'codex-exhausted.json',
+        type: 'codex',
+        codex_quota_updated_at_ms: 123456,
+        codex_quota: {
+          plan_type: 'plus',
+          rate_limit: {
+            primary_window: {
+              used_percent: 100,
+              limit_window_seconds: 604800,
+              reset_after_seconds: 3600,
+            },
+          },
+        },
+      },
+      t
+    );
+
+    expect(quota?.windows).toHaveLength(1);
+    expect(quota?.windows[0]).toMatchObject({ id: 'weekly', usedPercent: 100 });
+  });
 });
 
 describe('selectEffectiveQuota', () => {

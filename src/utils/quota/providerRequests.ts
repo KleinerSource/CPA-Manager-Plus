@@ -312,6 +312,8 @@ export const buildCodexQuotaWindows = (
 const buildCodexUsageRequestHeaders = (accountId?: string | null): Record<string, string> => {
   const headers: Record<string, string> = {
     ...CODEX_REQUEST_HEADERS,
+    'Cache-Control': 'no-cache, no-store, max-age=0',
+    Pragma: 'no-cache',
   };
   const trimmedAccountId = String(accountId ?? '').trim();
   if (trimmedAccountId) {
