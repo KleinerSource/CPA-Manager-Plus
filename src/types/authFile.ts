@@ -4,6 +4,7 @@
  */
 
 import type { RecentRequestBucket } from '@/utils/recentRequests';
+import type { CodexUsagePayload } from '@/types/quota';
 
 export type AuthFileType =
   | 'qwen'
@@ -60,6 +61,8 @@ export interface AuthFileItem {
   kiroAccountTypeLabel?: string;
   kiro_profile_badge_label?: string;
   kiroProfileBadgeLabel?: string;
+  codex_quota?: CodexUsagePayload;
+  codex_quota_updated_at_ms?: number;
   [key: string]: unknown;
 }
 

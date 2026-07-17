@@ -17,6 +17,7 @@ import type { AnimationPlaybackControlsWithThen } from 'motion-dom';
 import { useInterval } from '@/hooks/useInterval';
 import { useHeaderRefresh } from '@/hooks/useHeaderRefresh';
 import { usePageTransitionLayer } from '@/components/common/PageTransitionLayer';
+import { CODEX_CONFIG } from '@/components/quota';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -26,6 +27,12 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import { copyToClipboard } from '@/utils/clipboard';
 import { resolveAuthProvider } from '@/utils/quota';
+import {
+  buildObservedCodexQuotaState,
+  buildUsageHeaderSnapshotLookup,
+  getUsageHeaderSnapshotForAuthFile,
+  isUsageHeaderQuotaSnapshotExpired,
+} from '@/utils/usageHeaderSnapshots';
 import {
   MAX_CARD_PAGE_SIZE,
   MIN_CARD_PAGE_SIZE,
@@ -96,6 +103,9 @@ import {
 } from '@/features/authFiles/uiState';
 import type { AuthJsonInputType } from '@/features/authFiles/sessionAuthConverter';
 import type { AuthFileItem } from '@/types';
+import type { CodexQuotaState } from '@/types/quota';
+import type { UsageHeaderSnapshot } from '@/services/api/usageService';
+import { monitoringAnalyticsApi } from '@/services/api/usageService';
 import { useAuthStore, useNotificationStore, useQuotaStore, useThemeStore } from '@/stores';
 import styles from './AuthFilesPage.module.scss';
 
@@ -113,6 +123,8 @@ export function AuthFilesPage() {
   const managementKey = useAuthStore((state) => state.managementKey);
   const resolvedTheme: ResolvedTheme = useThemeStore((state) => state.resolvedTheme);
   const codexQuota = useQuotaStore((state) => state.codexQuota);
+  const setCodexQuota = useQuotaStore((state) => state.setCodexQuota);
+  const activateQuotaCacheScope = useQuotaStore((state) => state.activateQuotaCacheScope);
   const pageTransitionLayer = usePageTransitionLayer();
   const isCurrentLayer = pageTransitionLayer ? pageTransitionLayer.status === 'current' : true;
   const navigate = useNavigate();
@@ -141,10 +153,14 @@ export function AuthFilesPage() {
   const [lastCodexInspectionResults, setLastCodexInspectionResults] = useState<
     AuthFileCodexInspectionSnapshot[]
   >([]);
+  const [headerSnapshots, setHeaderSnapshots] = useState<UsageHeaderSnapshot[]>([]);
+  const [headerSnapshotGeneratedAtMs, setHeaderSnapshotGeneratedAtMs] = useState(0);
   const floatingBatchActionsRef = useRef<HTMLDivElement>(null);
   const batchActionAnimationRef = useRef<AnimationPlaybackControlsWithThen | null>(null);
   const previousSelectionCountRef = useRef(0);
   const selectionCountRef = useRef(0);
+  const autoRefreshingCodexQuotaRef = useRef<Set<string>>(new Set());
+  const expiredHeaderRefreshRef = useRef<Set<string>>(new Set());
 
   const {
     files,
@@ -420,9 +436,27 @@ export function AuthFilesPage() {
     [savePastedAuthJson]
   );
 
+  useEffect(() => {
+    activateQuotaCacheScope(`${apiBase}\u0000${managementKey ?? ''}`);
+    expiredHeaderRefreshRef.current.clear();
+  }, [activateQuotaCacheScope, apiBase, managementKey]);
+
+  const loadHeaderSnapshots = useCallback(async () => {
+    try {
+      const response = await monitoringAnalyticsApi.getHeaderSnapshots(apiBase, managementKey, {
+        days: 30,
+        limit: 1000,
+      });
+      setHeaderSnapshots(response.items);
+      setHeaderSnapshotGeneratedAtMs(response.generated_at_ms);
+    } catch {
+      // 额度快照属于增强信息，失败时保留已缓存额度。
+    }
+  }, [apiBase, managementKey]);
+
   const handleHeaderRefresh = useCallback(async () => {
-    await Promise.all([loadFiles(), loadExcluded(), loadModelAlias()]);
-  }, [loadFiles, loadExcluded, loadModelAlias]);
+    await Promise.all([loadFiles(), loadExcluded(), loadModelAlias(), loadHeaderSnapshots()]);
+  }, [loadFiles, loadExcluded, loadHeaderSnapshots, loadModelAlias]);
 
   useHeaderRefresh(handleHeaderRefresh);
 
@@ -431,7 +465,8 @@ export function AuthFilesPage() {
     loadFiles();
     loadExcluded();
     loadModelAlias();
-  }, [isCurrentLayer, loadFiles, loadExcluded, loadModelAlias]);
+    void loadHeaderSnapshots();
+  }, [isCurrentLayer, loadFiles, loadExcluded, loadHeaderSnapshots, loadModelAlias]);
 
   useInterval(
     () => {
@@ -439,6 +474,79 @@ export function AuthFilesPage() {
     },
     isCurrentLayer ? 240_000 : null
   );
+
+  useInterval(
+    () => {
+      void loadHeaderSnapshots();
+    },
+    isCurrentLayer ? 60_000 : null
+  );
+
+  const headerSnapshotLookup = useMemo(
+    () => buildUsageHeaderSnapshotLookup(headerSnapshots),
+    [headerSnapshots]
+  );
+
+  useEffect(() => {
+    if (!isCurrentLayer || files.length === 0) return;
+    const observedUpdates: Record<string, CodexQuotaState> = {};
+    for (const file of files) {
+      if (resolveAuthProvider(file) !== 'codex' || file.disabled || isRuntimeOnlyAuthFile(file)) {
+        continue;
+      }
+      const snapshot = getUsageHeaderSnapshotForAuthFile(headerSnapshotLookup, file);
+      const observedQuota = buildObservedCodexQuotaState(snapshot, t);
+      const activeQuota = codexQuota[file.name];
+      if (
+        observedQuota &&
+        activeQuota?.status !== 'loading' &&
+        (activeQuota?.fetchedAtMs ?? 0) < (snapshot?.timestamp_ms ?? 0) &&
+        (activeQuota?.observedAtMs ?? 0) < (snapshot?.timestamp_ms ?? 0)
+      ) {
+        observedUpdates[file.name] = observedQuota;
+      }
+
+      if (!snapshot || !isUsageHeaderQuotaSnapshotExpired(snapshot, headerSnapshotGeneratedAtMs || Date.now())) {
+        continue;
+      }
+      if ((activeQuota?.fetchedAtMs ?? 0) > snapshot.timestamp_ms) continue;
+      const marker = `${getAuthFileCodexInspectionKeyForFile(file)}:${snapshot.event_hash}`;
+      if (
+        expiredHeaderRefreshRef.current.has(marker) ||
+        autoRefreshingCodexQuotaRef.current.has(marker)
+      ) {
+        continue;
+      }
+      expiredHeaderRefreshRef.current.add(marker);
+      autoRefreshingCodexQuotaRef.current.add(marker);
+      void CODEX_CONFIG.fetchQuota(file, t)
+        .then((data) => {
+          setCodexQuota((current) => ({
+            ...current,
+            [file.name]: CODEX_CONFIG.buildSuccessState(data),
+          }));
+        })
+        .catch(() => {})
+        .finally(() => {
+          autoRefreshingCodexQuotaRef.current.delete(marker);
+        });
+    }
+    const updates = Object.entries(observedUpdates);
+    if (updates.length > 0) {
+      setCodexQuota((current) => ({
+        ...current,
+        ...Object.fromEntries(updates),
+      }));
+    }
+  }, [
+    codexQuota,
+    files,
+    headerSnapshotGeneratedAtMs,
+    headerSnapshotLookup,
+    isCurrentLayer,
+    setCodexQuota,
+    t,
+  ]);
 
   const existingTypes = useMemo(() => {
     const types = new Set<string>(['all']);

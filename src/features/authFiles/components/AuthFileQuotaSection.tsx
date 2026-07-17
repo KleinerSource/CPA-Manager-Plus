@@ -14,7 +14,9 @@ import {
 import { useNotificationStore, useQuotaStore } from '@/stores';
 import type { AntigravityQuotaState, AuthFileItem, CodexQuotaState, KiroQuotaState } from '@/types';
 import {
+  buildCodexQuotaWindows,
   getStatusFromError,
+  parseCodexUsagePayload,
   resolveCodexPlanType,
 } from '@/utils/quota';
 import { authFilesApi } from '@/services/api/authFiles';
@@ -38,13 +40,28 @@ const getQuotaConfig = (type: QuotaProviderType) => {
   return GEMINI_CLI_CONFIG;
 };
 
-const buildEmbeddedCodexQuota = (file: AuthFileItem): CodexQuotaState | undefined => {
-  const planType = resolveCodexPlanType(file);
-  if (!planType) return undefined;
+export const buildEmbeddedCodexQuota = (
+  file: AuthFileItem,
+  t: TFunction
+): CodexQuotaState | undefined => {
+  if (!file.codex_quota || !file.codex_quota_updated_at_ms) return undefined;
+  const payload = parseCodexUsagePayload(file.codex_quota);
+  if (!payload) return undefined;
+  const payloadPlanType =
+    typeof payload.plan_type === 'string'
+      ? payload.plan_type.trim().toLowerCase()
+      : typeof payload.planType === 'string'
+        ? payload.planType.trim().toLowerCase()
+        : null;
+  const resetCredits = payload.rate_limit_reset_credits ?? payload.rateLimitResetCredits;
   return {
     status: 'success',
-    windows: [],
-    planType
+    windows: buildCodexQuotaWindows(payload, t),
+    planType: payloadPlanType || resolveCodexPlanType(file),
+    rateLimitResetCreditsAvailableCount: normalizeNumberValue(
+      resetCredits?.available_count ?? resetCredits?.availableCount
+    ),
+    fetchedAtMs: file.codex_quota_updated_at_ms
   };
 };
 
@@ -133,6 +150,24 @@ const isKiroQuotaWithoutDetails = (quota: unknown): quota is KiroQuotaState => {
   );
 };
 
+export const selectEffectiveQuota = (quota: QuotaState, embeddedQuota: QuotaState): QuotaState => {
+  if (!quota) return embeddedQuota;
+  if (!embeddedQuota || quota.status !== 'success' || embeddedQuota.status !== 'success') {
+    return quota;
+  }
+  const quotaTime =
+    'observedAtMs' in quota && typeof quota.observedAtMs === 'number'
+      ? quota.observedAtMs
+      : 'fetchedAtMs' in quota && typeof quota.fetchedAtMs === 'number'
+        ? quota.fetchedAtMs
+        : 0;
+  const embeddedTime =
+    'fetchedAtMs' in embeddedQuota && typeof embeddedQuota.fetchedAtMs === 'number'
+      ? embeddedQuota.fetchedAtMs
+      : 0;
+  return embeddedTime > quotaTime ? embeddedQuota : quota;
+};
+
 const getKiroOverageEnabled = (quota: unknown): boolean | null => {
   if (!quota || typeof quota !== 'object' || !('overageStatus' in quota)) return null;
   const status = normalizeString((quota as KiroQuotaState).overageStatus);
@@ -166,13 +201,13 @@ export function useAuthFileQuotaRefresh(
   });
   const embeddedQuota =
     quotaType === 'codex'
-      ? (buildEmbeddedCodexQuota(file) as QuotaState)
+      ? (buildEmbeddedCodexQuota(file, t) as QuotaState)
       : quotaType === 'antigravity'
         ? (buildEmbeddedAntigravityQuota(file) as QuotaState)
       : quotaType === 'kiro'
         ? (buildEmbeddedKiroQuota(file) as QuotaState)
         : undefined;
-  const effectiveQuota = quota ?? embeddedQuota;
+  const effectiveQuota = selectEffectiveQuota(quota, embeddedQuota);
 
   const updateQuotaState = useQuotaStore((state) => {
     if (!quotaType) return noopQuotaStateUpdater;

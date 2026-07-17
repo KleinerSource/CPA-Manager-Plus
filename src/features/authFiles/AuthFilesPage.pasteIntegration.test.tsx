@@ -115,8 +115,18 @@ vi.mock('@/stores', () => ({
     }),
   useThemeStore: (selector: (state: { resolvedTheme: 'dark' }) => unknown) =>
     selector({ resolvedTheme: 'dark' }),
-  useQuotaStore: (selector: (state: { codexQuota: Record<string, never> }) => unknown) =>
-    selector({ codexQuota: {} }),
+  useQuotaStore: (
+    selector: (state: {
+      codexQuota: Record<string, never>;
+      setCodexQuota: ReturnType<typeof vi.fn>;
+      activateQuotaCacheScope: ReturnType<typeof vi.fn>;
+    }) => unknown
+  ) =>
+    selector({
+      codexQuota: {},
+      setCodexQuota: vi.fn(),
+      activateQuotaCacheScope: vi.fn(),
+    }),
 }));
 
 vi.mock('@/features/authFiles/hooks/useAuthFilesOauth', () => ({
