@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getAuthFileTableQuotaItems,
+  getAntigravityTableQuotaItems,
   getCodexTableQuotaWindows,
   type AuthFileCodexStatusSummary,
 } from '@/features/authFiles/model/authFilesPageModel';
-import type { CodexQuotaState } from '@/types/quota';
+import type { AntigravityQuotaState, CodexQuotaState } from '@/types/quota';
 
 const emptyCodexStatus = {
   isCodex: true,
@@ -67,5 +69,108 @@ describe('getCodexTableQuotaWindows', () => {
         }),
       ])
     );
+  });
+});
+
+describe('getAntigravityTableQuotaItems', () => {
+  it('保留一个凭证下的全部模型额度', () => {
+    const quota: AntigravityQuotaState = {
+      status: 'success',
+      groups: [
+        {
+          id: 'claude',
+          label: 'Claude 4.5',
+          models: ['claude-sonnet-4-5'],
+          remainingFraction: 0.82,
+          resetTime: '2026-07-29T07:52:00.000Z',
+        },
+        {
+          id: 'gemini',
+          label: 'Gemini 2.5 Pro',
+          models: ['gemini-2.5-pro'],
+          remainingFraction: 1,
+          resetTime: '2026-07-29T07:52:00.000Z',
+        },
+      ],
+    };
+
+    expect(getAntigravityTableQuotaItems(quota)).toEqual([
+      expect.objectContaining({ id: 'claude', label: 'Claude 4.5', percent: 82 }),
+      expect.objectContaining({ id: 'gemini', label: 'Gemini 2.5 Pro', percent: 100 }),
+    ]);
+  });
+});
+
+describe('getAuthFileTableQuotaItems', () => {
+  const t = ((key: string, params?: Record<string, unknown>) =>
+    params?.count === undefined ? key : `${key}:${params.count}`) as never;
+
+  it('生成 Claude、Gemini CLI、Kimi、Kiro 和 xAI 的列表额度项', () => {
+    expect(
+      getAuthFileTableQuotaItems(
+        'claude',
+        {
+          status: 'success',
+          windows: [{ id: 'five-hour', label: '5h', usedPercent: 25, resetLabel: '18:00' }],
+        },
+        t
+      )
+    ).toEqual([expect.objectContaining({ id: 'five-hour', percent: 75 })]);
+
+    expect(
+      getAuthFileTableQuotaItems(
+        'gemini-cli',
+        {
+          status: 'success',
+          buckets: [
+            {
+              id: 'gemini-pro',
+              label: 'Gemini Pro',
+              remainingFraction: 0.6,
+              remainingAmount: 12,
+            },
+          ],
+        },
+        t
+      )
+    ).toEqual([expect.objectContaining({ id: 'gemini-pro', percent: 60 })]);
+
+    expect(
+      getAuthFileTableQuotaItems(
+        'kimi',
+        { status: 'success', rows: [{ id: 'weekly', label: 'Weekly', used: 20, limit: 100 }] },
+        t
+      )
+    ).toEqual([expect.objectContaining({ id: 'weekly', percent: 80 })]);
+
+    expect(
+      getAuthFileTableQuotaItems(
+        'kiro',
+        {
+          status: 'success',
+          baseQuota: { used: 25, limit: 100, resetTime: 1_785_304_320 },
+          freeTrialQuota: null,
+          overageQuota: null,
+          subscriptionTitle: 'KIRO PRO+',
+        },
+        t
+      )
+    ).toEqual([expect.objectContaining({ id: 'base', percent: 75 })]);
+
+    expect(
+      getAuthFileTableQuotaItems(
+        'xai',
+        {
+          status: 'success',
+          billing: {
+            usedPercent: 40,
+            usedCents: 400,
+            monthlyLimitCents: 1000,
+            onDemandCapCents: null,
+          },
+        },
+        t
+      )
+    ).toEqual([expect.objectContaining({ id: 'monthly-limit', percent: 60 })]);
   });
 });

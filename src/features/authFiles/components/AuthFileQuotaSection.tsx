@@ -42,6 +42,27 @@ const getQuotaConfig = (type: QuotaProviderType) => {
 export const getQuotaI18nPrefix = (type: QuotaProviderType): string =>
   getQuotaConfig(type).i18nPrefix;
 
+export const preserveCodexPlanType = (
+  quotaType: QuotaProviderType,
+  previousState: unknown,
+  nextState: unknown
+): unknown => {
+  if (
+    quotaType !== 'codex' ||
+    !previousState ||
+    typeof previousState !== 'object' ||
+    !nextState ||
+    typeof nextState !== 'object'
+  ) {
+    return nextState;
+  }
+
+  const planType = (previousState as { planType?: unknown }).planType;
+  if (typeof planType !== 'string' || !planType.trim()) return nextState;
+
+  return { ...nextState, planType };
+};
+
 export const getAuthFileQuotaErrorMessage = (t: TFunction, quota: QuotaState): string => {
   const quotaErrorStatus =
     quota && typeof quota === 'object' && 'errorStatus' in quota ? quota.errorStatus : undefined;
@@ -252,7 +273,11 @@ export function useAuthFileQuotaRefresh(
 
     updateQuotaState((prev: Record<string, unknown>) => ({
       ...prev,
-      [file.name]: config.buildLoadingState()
+      [file.name]: preserveCodexPlanType(
+        quotaType,
+        prev[file.name],
+        config.buildLoadingState()
+      )
     }));
 
     try {
@@ -268,7 +293,11 @@ export function useAuthFileQuotaRefresh(
       const status = getStatusFromError(err);
       updateQuotaState((prev: Record<string, unknown>) => ({
         ...prev,
-        [file.name]: config.buildErrorState(message, status)
+        [file.name]: preserveCodexPlanType(
+          quotaType,
+          prev[file.name],
+          config.buildErrorState(message, status)
+        )
       }));
       requestAuthFilesRefresh();
       showNotification(t('auth_files.quota_refresh_failed', { name: file.name, message }), 'error');
