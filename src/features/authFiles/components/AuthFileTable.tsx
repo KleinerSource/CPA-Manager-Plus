@@ -305,9 +305,10 @@ type QuotaProgressProps = {
   label: string;
   percent: number | null;
   resetLabel: string | null;
+  detailLabel?: string | null;
 };
 
-function QuotaProgress({ label, percent, resetLabel }: QuotaProgressProps) {
+function QuotaProgress({ label, percent, resetLabel, detailLabel }: QuotaProgressProps) {
   if (percent === null && !resetLabel) return null;
 
   const normalizedPercent =
@@ -320,11 +321,14 @@ function QuotaProgress({ label, percent, resetLabel }: QuotaProgressProps) {
         : normalizedPercent >= 30
           ? styles.authFileTableQuotaMedium
           : styles.authFileTableQuotaHigh;
+  const metadataLabel = [detailLabel, resetLabel]
+    .filter((value): value is string => Boolean(value && value !== '-'))
+    .join(' · ');
 
   return (
     <div className={styles.authFileTableQuotaItem}>
       <div className={styles.authFileTableQuotaHeader}>
-        <span>{label}</span>
+        <span title={label}>{label}</span>
         <strong>{normalizedPercent === null ? '--' : `${normalizedPercent.toFixed(0)}%`}</strong>
       </div>
       <div className={styles.authFileTableQuotaTrack}>
@@ -333,7 +337,11 @@ function QuotaProgress({ label, percent, resetLabel }: QuotaProgressProps) {
           style={{ width: `${normalizedPercent ?? 0}%` }}
         />
       </div>
-      {resetLabel ? <span className={styles.authFileTableQuotaReset}>{resetLabel}</span> : null}
+      {metadataLabel ? (
+        <span className={styles.authFileTableQuotaReset} title={metadataLabel}>
+          {metadataLabel}
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -351,9 +359,23 @@ function AuthFileTableQuotaCell({
 }: AuthFileTableQuotaCellProps) {
   const { t } = useTranslation();
   const quotaType = resolveTableQuotaType(file);
-  const { quota, quotaStatus } = useAuthFileQuotaRefresh(file, quotaType, disableControls);
+  const { quota, quotaStatus, canRefreshQuota, refreshQuotaForFile } = useAuthFileQuotaRefresh(
+    file,
+    quotaType,
+    disableControls
+  );
 
-  if (quotaType && quotaStatus === 'error') {
+  if (!quotaType) return null;
+
+  if (quotaStatus === 'loading') {
+    return (
+      <span className={styles.authFileTableQuotaPrompt}>
+        {t(`${getQuotaI18nPrefix(quotaType)}.loading`)}
+      </span>
+    );
+  }
+
+  if (quotaStatus === 'error') {
     return (
       <div className={styles.authFileTableQuotaStack}>
         <div className={styles.quotaError}>
@@ -366,6 +388,20 @@ function AuthFileTableQuotaCell({
   }
 
   const items = buildAuthFileTableQuotaItems(quotaType, quota, t, { codexStatus });
+
+  if (items.length === 0) {
+    return canRefreshQuota ? (
+      <button
+        type="button"
+        className={styles.authFileTableQuotaPrompt}
+        onClick={() => void refreshQuotaForFile()}
+      >
+        {t(`${getQuotaI18nPrefix(quotaType)}.idle`)}
+      </button>
+    ) : (
+      <span className={styles.authFileTableQuotaPrompt}>-</span>
+    );
+  }
 
   return (
     <div className={styles.authFileTableQuotaStack}>

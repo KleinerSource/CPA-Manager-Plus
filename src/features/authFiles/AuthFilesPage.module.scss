@@ -647,8 +647,7 @@
 
 .quotaSection {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: stretch;
   gap: $spacing-sm;
   min-width: 0;
@@ -661,14 +660,8 @@
   display: flex;
   flex-direction: column;
   gap: $spacing-xs;
-  flex: 1 1 0;
   min-width: 0;
   padding: 2px 0;
-}
-
-.quotaRow + .quotaRow {
-  padding-left: $spacing-sm;
-  border-left: 1px solid color-mix(in srgb, var(--border-color) 38%, transparent);
 }
 
 .quotaSection > .codexPlan,
@@ -676,7 +669,8 @@
 .quotaSection > .quotaError,
 .quotaSection > .quotaWarning,
 .quotaSection > .kiroOverageActionRow {
-  flex: 0 0 100%;
+  flex: 0 0 auto;
+  width: 100%;
 }
 
 .quotaRowHeader {
@@ -1482,17 +1476,36 @@
   min-width: 150px;
 }
 
+.authFileTableQuotaPrompt {
+  display: inline-flex;
+  width: 100%;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--text-tertiary);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.35;
+  text-align: left;
+}
+
+button.authFileTableQuotaPrompt {
+  cursor: pointer;
+
+  &:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+  }
+}
+
 .authFileTableQuotaStack {
   display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  flex-wrap: nowrap;
+  flex-direction: column;
   gap: 7px;
   min-width: 136px;
 }
 
 .authFileTableQuotaItem {
-  flex: 1 1 0;
   min-width: 0;
 }
 
@@ -1507,8 +1520,16 @@
 }
 
 .authFileTableQuotaHeader strong {
+  flex: 0 0 auto;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
+}
+
+.authFileTableQuotaHeader > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .authFileTableQuotaTrack {

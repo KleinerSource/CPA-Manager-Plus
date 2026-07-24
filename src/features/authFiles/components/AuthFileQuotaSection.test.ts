@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildEmbeddedCodexQuota,
   getAuthFileQuotaErrorMessage,
+  preserveCodexPlanType,
   selectEffectiveQuota
 } from './AuthFileQuotaSection';
 
@@ -101,5 +102,27 @@ describe('selectEffectiveQuota', () => {
     const startup = { status: 'success', fetchedAtMs: 2000 };
 
     expect(selectEffectiveQuota(headers, startup)).toBe(headers);
+  });
+});
+
+describe('preserveCodexPlanType', () => {
+  it('刷新期间保留 Codex 套餐，避免依赖套餐的卡片排序跳动', () => {
+    expect(
+      preserveCodexPlanType(
+        'codex',
+        { status: 'success', planType: 'team' },
+        { status: 'loading', windows: [] }
+      )
+    ).toEqual({ status: 'loading', windows: [], planType: 'team' });
+  });
+
+  it('刷新失败后继续保留 Codex 套餐', () => {
+    expect(
+      preserveCodexPlanType(
+        'codex',
+        { status: 'loading', planType: 'team' },
+        { status: 'error', error: 'upstream failed' }
+      )
+    ).toEqual({ status: 'error', error: 'upstream failed', planType: 'team' });
   });
 });
